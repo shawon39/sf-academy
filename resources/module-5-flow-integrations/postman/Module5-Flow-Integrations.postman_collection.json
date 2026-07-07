@@ -1,7 +1,7 @@
 {
   "info": {
-    "name": "Module 5 — Flow Integrations (inbound + Frankfurter)",
-    "description": "Two folders:\n\n1. 'Inbound — Run a Flow via REST': the token request is Module 2's, verbatim — then one POST turns your autolaunched flow (Lead_Intake_API, built in Module 5 topic 2) into a real API endpoint.\n2. 'Project — Frankfurter API': Session A verification of the free, no-auth exchange-rate API. SAVE THE RESPONSE JSON — Session B pastes it into Flow Builder as the sample response.\n\nSET THESE COLLECTION VARIABLES FIRST (same values as the Module 2 collection):\n- my_domain: your org's My Domain URL, e.g. https://yourcompany.my.salesforce.com\n- consumer_key / consumer_secret: from the External Client App\n\nPrereqs for the inbound folder: the Lead_Intake_API flow exists and is ACTIVE, and the integration user's permission set includes Create on Lead.",
+    "name": "Module 5 — Flow Integrations (inbound + Amadeus Travel Desk)",
+    "description": "Three folders:\n\n1. 'Inbound — Run a Flow via REST': the token request is Module 2's, verbatim — then one POST turns your autolaunched flow (Lead_Intake_API, built in Module 5 topic 2) into a real API endpoint.\n2. 'Project — Amadeus Travel Desk': Session A verification — real OAuth client credentials against Amadeus's free test tier, then the City Search call. SAVE THE CITY-SEARCH RESPONSE JSON — Session B pastes it into Flow Builder as the sample response.\n3. 'Homework': the include=AIRPORTS dynamic-keys trap, and the no-auth Frankfurter API for the Custom-protocol credential variation.\n\nSET THESE COLLECTION VARIABLES FIRST:\n- my_domain / consumer_key / consumer_secret: same values as the Module 2 collection (Salesforce inbound)\n- amadeus_client_id / amadeus_client_secret: the API Key / API Secret from developers.amadeus.com > My Self-Service Workspace > your app\n\nPrereqs for the inbound folder: the Lead_Intake_API flow exists and is ACTIVE, and the integration user's permission set includes Create on Lead.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -9,7 +9,10 @@
     { "key": "consumer_key", "value": "PASTE_CONSUMER_KEY", "type": "string" },
     { "key": "consumer_secret", "value": "PASTE_CONSUMER_SECRET", "type": "string" },
     { "key": "api_version", "value": "64.0", "type": "string" },
-    { "key": "access_token", "value": "", "type": "string" }
+    { "key": "access_token", "value": "", "type": "string" },
+    { "key": "amadeus_client_id", "value": "PASTE_AMADEUS_API_KEY", "type": "string" },
+    { "key": "amadeus_client_secret", "value": "PASTE_AMADEUS_API_SECRET", "type": "string" },
+    { "key": "amadeus_access_token", "value": "", "type": "string" }
   ],
   "item": [
     {
@@ -111,11 +114,96 @@
       ]
     },
     {
-      "name": "Project — Frankfurter API",
-      "description": "Session A: verify the free, no-auth exchange-rate API (European Central Bank reference rates). No signup, no key.",
+      "name": "Project — Amadeus Travel Desk",
+      "description": "Session A verification: real OAuth 2.0 client credentials against Amadeus's free self-service test tier, then the City Search API the flow will call. Register your app at developers.amadeus.com first (guide, Project A).",
       "item": [
         {
-          "name": "1. Convert 50,000 USD to EUR",
+          "name": "1. Get Amadeus Token (client credentials)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const json = pm.response.json();",
+                  "    pm.collectionVariables.set('amadeus_access_token', json.access_token);",
+                  "    console.log('Amadeus token saved. Lives ' + json.expires_in + ' seconds (~30 min).');",
+                  "}",
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "grant_type", "value": "client_credentials", "type": "text" },
+                { "key": "client_id", "value": "{{amadeus_client_id}}", "type": "text" },
+                { "key": "client_secret", "value": "{{amadeus_client_secret}}", "type": "text" }
+              ]
+            },
+            "url": {
+              "raw": "https://test.api.amadeus.com/v1/security/oauth2/token",
+              "protocol": "https",
+              "host": ["test", "api", "amadeus", "com"],
+              "path": ["v1", "security", "oauth2", "token"]
+            },
+            "description": "Same grant_type=client_credentials as Salesforce and Auth0 — sixth time you've seen the recipe, third company. Credentials go in the form body (remember this when configuring the External Credential: 'pass client credentials in request body' ON). Tokens live ~30 minutes; in Salesforce, the Named Credential engine re-fetches automatically."
+          }
+        },
+        {
+          "name": "2. City Search — SAVE THIS RESPONSE for Flow Builder",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{amadeus_access_token}}", "type": "text" }
+            ],
+            "url": {
+              "raw": "https://test.api.amadeus.com/v1/reference-data/locations/cities?keyword=PARIS&max=3",
+              "protocol": "https",
+              "host": ["test", "api", "amadeus", "com"],
+              "path": ["v1", "reference-data", "locations", "cities"],
+              "query": [
+                { "key": "keyword", "value": "PARIS" },
+                { "key": "max", "value": "3" }
+              ]
+            },
+            "description": "The API the Travel Desk flow calls. Response: data[] with name, iataCode, geoCode.latitude/longitude — clean camelCase keys, Flow-safe. SAVE THE FULL RESPONSE JSON: Session B pastes it into HTTP Callout's 'Provide Sample Response' step. keyword must be 2–10 characters (the API's own spec)."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Homework",
+      "description": "Two deliberate lessons: the dynamic-keys trap on a real API, and the no-auth credential variation.",
+      "item": [
+        {
+          "name": "H1. City Search WITH include=AIRPORTS (the dynamic-keys trap)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{amadeus_access_token}}", "type": "text" }
+            ],
+            "url": {
+              "raw": "https://test.api.amadeus.com/v1/reference-data/locations/cities?keyword=PARIS&max=1&include=AIRPORTS",
+              "protocol": "https",
+              "host": ["test", "api", "amadeus", "com"],
+              "path": ["v1", "reference-data", "locations", "cities"],
+              "query": [
+                { "key": "keyword", "value": "PARIS" },
+                { "key": "max", "value": "1" },
+                { "key": "include", "value": "AIRPORTS" }
+              ]
+            },
+            "description": "Look at included.airports: the airports are keyed BY THEIR CODES — \"CDG\": {...}, \"ORY\": {...}. Those keys change with every city, so a sample from Paris builds a Flow structure that Madrid's response won't match. That's the dynamic-keys trap from the troubleshooting table, on a real API. Homework: explain in one sentence why this response can't be sampled safely."
+          }
+        },
+        {
+          "name": "H2. Frankfurter — the no-auth API (for the Custom-protocol credential build)",
           "request": {
             "method": "GET",
             "header": [],
@@ -130,26 +218,7 @@
                 { "key": "symbols", "value": "EUR" }
               ]
             },
-            "description": "Response shape (live-verified July 2026): {\"amount\":50000.0,\"base\":\"USD\",\"date\":\"2026-07-07\",\"rates\":{\"EUR\":43733}}. SAVE THIS JSON — Session B pastes it into Flow Builder's 'Provide Sample Response' step, and Flow generates typed variables from these exact keys. Clean keys (no spaces) are why this API was chosen."
-          }
-        },
-        {
-          "name": "2. Homework: same call, GBP",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "https://api.frankfurter.dev/v1/latest?amount=50000&base=USD&symbols=GBP",
-              "protocol": "https",
-              "host": ["api", "frankfurter", "dev"],
-              "path": ["v1", "latest"],
-              "query": [
-                { "key": "amount", "value": "50000" },
-                { "key": "base", "value": "USD" },
-                { "key": "symbols", "value": "GBP" }
-              ]
-            },
-            "description": "Notice the response key is rates.GBP — a DIFFERENT key than the EUR sample. That's the dynamic-keys lesson: the Flow action you sampled on EUR can't see this value. Homework #1 makes you feel this properly."
+            "description": "Free exchange-rate API (ECB reference rates), zero auth — no signup, no key, no token. Use it to build the no-auth Named Credential variation from Project A: External Credential with the Custom protocol and an EMPTY principal, then a mini currency-checker flow. Response shape (live-verified July 2026): {\"amount\":50000.0,\"base\":\"USD\",\"date\":\"2026-07-07\",\"rates\":{\"EUR\":43733}}."
           }
         }
       ]

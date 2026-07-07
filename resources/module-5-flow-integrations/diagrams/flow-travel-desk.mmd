@@ -1,0 +1,35 @@
+%%{init: {'theme': 'base', 'themeVariables': {
+  'actorBkg': '#e9f2fd',
+  'actorBorder': '#0b6bcb',
+  'actorTextColor': '#18212e',
+  'actorLineColor': '#d5dbe4',
+  'signalColor': '#33404f',
+  'signalTextColor': '#18212e',
+  'labelBoxBkgColor': '#fbf0e0',
+  'labelBoxBorderColor': '#b4590b',
+  'labelTextColor': '#18212e',
+  'noteBkgColor': '#fbf0e0',
+  'noteBorderColor': '#b4590b',
+  'noteTextColor': '#18212e',
+  'sequenceNumberColor': '#ffffff'
+}}}%%
+sequenceDiagram
+    autonumber
+    actor U as Sales Rep<br/>(screen flow user)
+    participant F as Screen Flow<br/>Travel Desk
+    participant N as Named Credential<br/>Engine
+    participant T as Amadeus Token Endpoint<br/>/v1/security/oauth2/token
+    participant A as Amadeus City Search<br/>/v1/reference-data/locations/cities
+
+    U->>F: Types the client's HQ city: "PAR"
+    F->>N: HTTP Callout action —<br/>GET callout:Amadeus/…?keyword=PAR&max=1
+    Note over N,T: Real OAuth — handled invisibly
+    N->>T: POST grant_type=client_credentials<br/>(API Key + Secret from the Principal)
+    T-->>N: access_token (lives ~30 min, cached)
+    N->>A: GET …?keyword=PAR&max=1<br/>Authorization: Bearer &lt;token&gt;
+    A-->>N: { "data": [ { "name": "PARIS", "iataCode": "PAR",<br/>"geoCode": { "latitude": …, "longitude": … } } ] }
+    N-->>F: 200 OK — a typed collection
+    F->>F: Loop = the JSON parser →<br/>CityName, CityCode, Lat, Lon
+    F-->>U: "PARIS (PAR) — save to this Account?" → Update Records
+
+    Note over U,A: The flow never sees a token or a secret —<br/>Modules 1–4 built the machine that makes this boring
