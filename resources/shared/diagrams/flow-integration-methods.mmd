@@ -1,0 +1,14 @@
+flowchart LR
+    A["A Flow needs to exchange data<br/>with another system"] --> B{"Which direction?"}
+    B -- "Flow calls OUT and<br/>needs the answer back" --> C{"Typical REST API,<br/>simple JSON?"}
+    C -- "Yes — most cases" --> D["HTTP CALLOUT ⭐<br/>point-and-click, no code"]
+    C -- "No — complex logic<br/>or gnarly payloads" --> E["INVOCABLE APEX<br/>a developer assist"]
+    B -- "Flow calls OUT,<br/>fire-and-forget" --> F["PLATFORM EVENT (publish)<br/>or OUTBOUND MESSAGE"]
+    B -- "The OUTSIDE system<br/>starts the Flow" --> G["REST ACTIONS API<br/>or PLATFORM EVENT-TRIGGERED FLOW"]
+    style A fill:#f5f8fb,stroke:#d5dbe4,stroke-width:1.5px
+    style B fill:#f5f8fb,stroke:#d5dbe4,stroke-width:1.5px
+    style C fill:#f5f8fb,stroke:#d5dbe4,stroke-width:1.5px
+    style D fill:#e6f4ec,stroke:#157a4c,stroke-width:2px
+    style E fill:#fbf0e0,stroke:#b4590b,stroke-width:2px
+    style F fill:#e9f2fd,stroke:#0b6bcb,stroke-width:2px
+    style G fill:#f1eafe,stroke:#6d28d9,stroke-width:2px

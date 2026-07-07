@@ -1,0 +1,158 @@
+{
+  "info": {
+    "name": "Module 5 — Flow Integrations (inbound + Frankfurter)",
+    "description": "Two folders:\n\n1. 'Inbound — Run a Flow via REST': the token request is Module 2's, verbatim — then one POST turns your autolaunched flow (Lead_Intake_API, built in Module 5 topic 2) into a real API endpoint.\n2. 'Project — Frankfurter API': Session A verification of the free, no-auth exchange-rate API. SAVE THE RESPONSE JSON — Session B pastes it into Flow Builder as the sample response.\n\nSET THESE COLLECTION VARIABLES FIRST (same values as the Module 2 collection):\n- my_domain: your org's My Domain URL, e.g. https://yourcompany.my.salesforce.com\n- consumer_key / consumer_secret: from the External Client App\n\nPrereqs for the inbound folder: the Lead_Intake_API flow exists and is ACTIVE, and the integration user's permission set includes Create on Lead.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "my_domain", "value": "https://YOURCOMPANY.my.salesforce.com", "type": "string" },
+    { "key": "consumer_key", "value": "PASTE_CONSUMER_KEY", "type": "string" },
+    { "key": "consumer_secret", "value": "PASTE_CONSUMER_SECRET", "type": "string" },
+    { "key": "api_version", "value": "64.0", "type": "string" },
+    { "key": "access_token", "value": "", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "Inbound — Run a Flow via REST",
+      "description": "Your flow as an API. Run top to bottom.",
+      "item": [
+        {
+          "name": "1. Get Access Token (Module 2's, verbatim)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    pm.collectionVariables.set('access_token', pm.response.json().access_token);",
+                  "    console.log('Salesforce access token saved.');",
+                  "}",
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "grant_type", "value": "client_credentials", "type": "text" },
+                { "key": "client_id", "value": "{{consumer_key}}", "type": "text" },
+                { "key": "client_secret", "value": "{{consumer_secret}}", "type": "text" }
+              ]
+            },
+            "url": {
+              "raw": "{{my_domain}}/services/oauth2/token",
+              "host": ["{{my_domain}}"],
+              "path": ["services", "oauth2", "token"]
+            },
+            "description": "The exact client-credentials request from Module 2. The auth you built once serves every module."
+          }
+        },
+        {
+          "name": "2. Invoke the Lead_Intake_API flow",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "const arr = pm.response.json();",
+                  "if (Array.isArray(arr) && arr[0]) {",
+                  "    console.log('isSuccess: ' + arr[0].isSuccess);",
+                  "    if (arr[0].outputValues) console.log('NewLeadId: ' + arr[0].outputValues.NewLeadId);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}", "type": "text" },
+              { "key": "Content-Type", "value": "application/json", "type": "text" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"inputs\": [\n    { \"CompanyName\": \"Acme Partner GmbH\", \"ContactLastName\": \"Weber\" }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{my_domain}}/services/data/v{{api_version}}/actions/custom/flow/Lead_Intake_API",
+              "host": ["{{my_domain}}"],
+              "path": ["services", "data", "v{{api_version}}", "actions", "custom", "flow", "Lead_Intake_API"]
+            },
+            "description": "Runs the autolaunched flow. Response: [{ actionName, isSuccess, outputValues: { NewLeadId } }]. Then check Leads in the org — Created By = the integration user. Break-it drills: deactivate the flow (fails — must be Active); typo an input name (error names it); remove Create on Lead from the permission set (isSuccess: false with an access error)."
+          }
+        },
+        {
+          "name": "3. Batch: three leads in one call",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}", "type": "text" },
+              { "key": "Content-Type", "value": "application/json", "type": "text" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"inputs\": [\n    { \"CompanyName\": \"Alpha Co\", \"ContactLastName\": \"Anders\" },\n    { \"CompanyName\": \"Beta Ltd\", \"ContactLastName\": \"Berg\" },\n    { \"CompanyName\": \"Gamma AG\", \"ContactLastName\": \"Gruber\" }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{my_domain}}/services/data/v{{api_version}}/actions/custom/flow/Lead_Intake_API",
+              "host": ["{{my_domain}}"],
+              "path": ["services", "data", "v{{api_version}}", "actions", "custom", "flow", "Lead_Intake_API"]
+            },
+            "description": "Each object in the inputs array runs the flow once — three leads, one request, three result objects back. (Documented behavior of the Actions API; still not a bulk-loading tool.)"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Project — Frankfurter API",
+      "description": "Session A: verify the free, no-auth exchange-rate API (European Central Bank reference rates). No signup, no key.",
+      "item": [
+        {
+          "name": "1. Convert 50,000 USD to EUR",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "https://api.frankfurter.dev/v1/latest?amount=50000&base=USD&symbols=EUR",
+              "protocol": "https",
+              "host": ["api", "frankfurter", "dev"],
+              "path": ["v1", "latest"],
+              "query": [
+                { "key": "amount", "value": "50000" },
+                { "key": "base", "value": "USD" },
+                { "key": "symbols", "value": "EUR" }
+              ]
+            },
+            "description": "Response shape (live-verified July 2026): {\"amount\":50000.0,\"base\":\"USD\",\"date\":\"2026-07-07\",\"rates\":{\"EUR\":43733}}. SAVE THIS JSON — Session B pastes it into Flow Builder's 'Provide Sample Response' step, and Flow generates typed variables from these exact keys. Clean keys (no spaces) are why this API was chosen."
+          }
+        },
+        {
+          "name": "2. Homework: same call, GBP",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "https://api.frankfurter.dev/v1/latest?amount=50000&base=USD&symbols=GBP",
+              "protocol": "https",
+              "host": ["api", "frankfurter", "dev"],
+              "path": ["v1", "latest"],
+              "query": [
+                { "key": "amount", "value": "50000" },
+                { "key": "base", "value": "USD" },
+                { "key": "symbols", "value": "GBP" }
+              ]
+            },
+            "description": "Notice the response key is rates.GBP — a DIFFERENT key than the EUR sample. That's the dynamic-keys lesson: the Flow action you sampled on EUR can't see this value. Homework #1 makes you feel this properly."
+          }
+        }
+      ]
+    }
+  ]
+}

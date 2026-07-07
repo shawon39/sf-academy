@@ -1,0 +1,33 @@
+%%{init: {'theme': 'base', 'themeVariables': {
+  'actorBkg': '#e9f2fd',
+  'actorBorder': '#0b6bcb',
+  'actorTextColor': '#18212e',
+  'actorLineColor': '#d5dbe4',
+  'signalColor': '#33404f',
+  'signalTextColor': '#18212e',
+  'labelBoxBkgColor': '#fbf0e0',
+  'labelBoxBorderColor': '#b4590b',
+  'labelTextColor': '#18212e',
+  'noteBkgColor': '#fbf0e0',
+  'noteBorderColor': '#b4590b',
+  'noteTextColor': '#18212e',
+  'sequenceNumberColor': '#ffffff'
+}}}%%
+sequenceDiagram
+    autonumber
+    participant P as External System<br/>(Postman today)
+    participant T as Salesforce<br/>Token Endpoint
+    participant R as Salesforce REST API<br/>/actions/custom/flow/…
+    participant F as Autolaunched Flow<br/>Lead_Intake_API
+
+    Note over P,T: Module 2's flow, reused verbatim
+    P->>T: POST grant_type=client_credentials<br/>client_id + client_secret
+    T-->>P: access_token (Bearer)
+
+    P->>R: POST /actions/custom/flow/Lead_Intake_API<br/>{ "inputs": [{ "CompanyName": "…",<br/>"ContactLastName": "…" }] }
+    R->>F: Start the flow, passing the inputs
+    F->>F: Create Records — a new Lead<br/>(LeadSource = "Partner API")
+    F-->>R: output variable NewLeadId
+    R-->>P: 200 OK — isSuccess: true,<br/>outputValues: { NewLeadId: "00Q…" }
+
+    Note over P,F: An admin-built flow is now a real API endpoint —<br/>no Apex REST class needed

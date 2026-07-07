@@ -13,6 +13,7 @@ Open **[index.html](index.html)** in a browser. It's a single self-contained app
 - **Module 2 · Client Credentials** — the flow, inbound Salesforce setup, Postman verification, real-world use cases, and the **mini-project**: a "Portal User Provisioner" doing full CRUD from Apex against Auth0's free Management API, in three ~1-hour sessions (A: Auth0 + Postman CRUD → B: declarative Salesforce plumbing + Apex service → C: update/delete + trigger→Queueable automation).
 - **Module 3 · Web Server + PKCE** — browser logins, authorization codes, PKCE, refresh tokens; inbound labs via Postman's OAuth helper, and the **mini-project**: a "Document Filer" (A: Dropbox app + Postman consent/list/upload/share → B: Auth Provider with PKCE + Browser-Flow External Credential + one-time Authenticate + TWO Named Credentials for Dropbox's two hosts → C: Apex uploads an account summary and writes the shared link back; automation is the do-it-yourself capstone).
 - **Module 4 · JWT Bearer** — certificates instead of secrets: signed claims, pre-authorization, the sandbox-audience trap; inbound verification via `sf org login jwt`, and the **mini-project**: a "Kickoff Scheduler" doing full CRUD on **Google Calendar events** (A: Cloud project + service account + upload the *Salesforce* certificate to Google + share the calendar + Postman CRUD with an Apex-minted token → B: `GoogleCalendarService.cls` using `Auth.JWT`/`Auth.JWS`/`Auth.JWTBearerTokenExchange` → C: update/delete + book a kickoff event from an Opportunity with the link written back; Closed-Won automation is the do-it-yourself capstone).
+- **Module 5 · Flow Integrations** — APIs with clicks, not code: the full menu of Flow integration methods (HTTP Callout, External Services, Invocable Apex, Platform Events, Outbound Messages, and the inbound REST Actions API), your flows as instant REST endpoints (`/actions/custom/flow/…`), and **two builds**: a "Deal Desk Currency Checker" screen flow calling the free Frankfurter exchange-rate API through a no-auth Named Credential, and the "No-Code Portal Provisioner" — Module 2's Apex project rebuilt as a record-triggered flow (Run Asynchronously path = the Queueable rule, fault connector = the try/catch) reusing the same Auth0 Named Credential.
 
 ## Folder map
 
@@ -42,9 +43,13 @@ sf-academy/
 │   │   ├── apex/anonymous-scripts.apex          ← run-blocks for Sessions A, B and C
 │   │   ├── scripts/jwt-inbound-commands.sh      ← openssl cert + sf org login jwt
 │   │   └── diagrams/salesforce-to-google-calendar-jwt.(mmd|svg)
+│   ├── module-5-flow-integrations/
+│   │   ├── postman/Module5-Flow-Integrations.postman_collection.json
+│   │   │       (inbound flow-invoke folder + Frankfurter verification folder)
+│   │   └── diagrams/flow-currency-checker.(mmd|svg)
 │   └── shared/
-│       ├── diagrams/  (decision flowchart + client-credentials / web-server / jwt-bearer sequences — mmd + svg)
-│       └── handouts/  (module2 / module3 / module4 cheat sheets)
+│       ├── diagrams/  (decision flowchart + flow-methods flowchart + client-credentials / web-server / jwt-bearer / flow-inbound sequences — mmd + svg)
+│       └── handouts/  (module2 / module3 / module4 / module5 cheat sheets)
 ├── LICENSE
 └── .nojekyll                           ← tells GitHub Pages to serve the plain HTML as-is
 ```
@@ -57,6 +62,7 @@ sf-academy/
 - Custom fields needed: Module 2 Session C — `Provision_Portal_Access__c` (Checkbox), `Auth0_User_Id__c` (Text 100), `Provisioning_Status__c` (Text 255) on Contact; Module 3 Session C — `Dropbox_Link__c` (URL) on Account; Module 4 Session C — `Kickoff_Event_Link__c` (URL) on Opportunity.
 - Module 3 project prerequisites: free Dropbox account; the app is created live in Session A (App-folder access = built-in least privilege).
 - Module 4 project prerequisites: free Google account (Calendar API needs no billing); Salesforce CLI installed for the inbound labs; Remote Site Settings for `https://oauth2.googleapis.com` and `https://www.googleapis.com`. Caution: corporate Google orgs can block service-account key upload by policy — personal accounts are fine.
+- Module 5 prerequisites: Modules 1–2 completed (it reuses the External Client App, the integration user, and the `Auth0_Mgmt_API` Named Credential); the Frankfurter API needs no signup at all. Custom fields from Module 2 Session C are reused by Project C; deactivate Module 2's `ContactTrigger` before activating the flow version so two provisioners don't race.
 - UI labels drift between Salesforce releases — the guide teaches matching fields by role and links the official doc everywhere.
 
 ## License
