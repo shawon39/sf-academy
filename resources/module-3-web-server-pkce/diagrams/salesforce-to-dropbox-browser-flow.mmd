@@ -1,0 +1,36 @@
+%%{init: {'theme': 'base', 'themeVariables': {
+  'actorBkg': '#e9f2fd',
+  'actorBorder': '#0b6bcb',
+  'actorTextColor': '#18212e',
+  'actorLineColor': '#d5dbe4',
+  'signalColor': '#33404f',
+  'signalTextColor': '#18212e',
+  'labelBoxBkgColor': '#fbf0e0',
+  'labelBoxBorderColor': '#b4590b',
+  'labelTextColor': '#18212e',
+  'noteBkgColor': '#fbf0e0',
+  'noteBorderColor': '#b4590b',
+  'noteTextColor': '#18212e',
+  'sequenceNumberColor': '#ffffff'
+}}}%%
+sequenceDiagram
+    autonumber
+    actor A as Admin<br/>(one-time setup)
+    participant SF as Salesforce<br/>External Credential Principal
+    participant DB as Dropbox<br/>(login, consent & API)
+    participant X as Apex<br/>(runtime)
+    participant N as Named Credential<br/>Engine
+
+    Note over A,DB: PART 1 — one time: connect the account
+    A->>SF: Click "Authenticate" on the principal
+    SF->>DB: Browser opens — Dropbox login<br/>+ consent screen (scopes listed)
+    DB-->>SF: authorization code → tokens<br/>access + refresh, stored encrypted
+
+    Note over X,N: PART 2 — runtime: every callout afterwards
+    X->>N: callout:Dropbox_API/2/files/list_folder
+    N->>N: Access token expired?<br/>Refresh silently with the refresh token
+    N->>DB: Request + Authorization: Bearer &lt;token&gt;
+    DB-->>N: 200 OK — JSON
+    N-->>X: HttpResponse
+
+    Note over A,N: Humans consent once — machines run forever after

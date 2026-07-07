@@ -1,0 +1,125 @@
+{
+  "info": {
+    "name": "Module 4 — Google Calendar CRUD (JWT Bearer)",
+    "description": "Project Session A verification: full create/read/update/delete on Google Calendar events.\n\nGETTING THE TOKEN: Postman can't sign JWTs into the 'assertion' parameter, so mint the token with the 6-line Anonymous Apex block in resources/phase-3-jwt-bearer/apex/anonymous-scripts.apex (Session A block), copy the debugged TOKEN value into the collection variable google_access_token. Tokens live ~1 hour — mint a fresh one when calls start returning 401. That re-signing IS the JWT bearer flow's 'refresh'.\n\nVariables to set:\n- google_access_token: from the Apex debug log\n- calendar_id: from Google Calendar > Settings and sharing > Integrate calendar (your Gmail address for the primary calendar). The calendar must be shared with the service account with 'Make changes to events'.\n\nKeep calendar.google.com open while running — events appear, rename, and vanish live.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "google_access_token", "value": "PASTE_TOKEN_FROM_APEX_DEBUG", "type": "string" },
+    { "key": "calendar_id", "value": "you@gmail.com", "type": "string" },
+    { "key": "event_id", "value": "", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "1. CREATE event (POST)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (pm.response.code === 200) {",
+              "    const ev = pm.response.json();",
+              "    pm.collectionVariables.set('event_id', ev.id);",
+              "    console.log('Event id saved: ' + ev.id + ' — open it: ' + ev.htmlLink);",
+              "}",
+              "pm.test('Status is 200', () => pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{google_access_token}}", "type": "text" },
+          { "key": "Content-Type", "value": "application/json", "type": "text" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"summary\": \"Kickoff — created from Postman\",\n  \"start\": { \"dateTime\": \"2026-07-15T10:00:00Z\" },\n  \"end\":   { \"dateTime\": \"2026-07-15T10:30:00Z\" }\n}"
+        },
+        "url": {
+          "raw": "https://www.googleapis.com/calendar/v3/calendars/{{calendar_id}}/events",
+          "protocol": "https",
+          "host": ["www", "googleapis", "com"],
+          "path": ["calendar", "v3", "calendars", "{{calendar_id}}", "events"]
+        },
+        "description": "Datetimes must be RFC 3339 (e.g. 2026-07-15T10:00:00Z). The response includes id (auto-saved) and htmlLink — a direct URL to the event. 404 here usually means the calendar isn't shared with the service account (Google hides unshared calendars as 404, not 403)."
+      }
+    },
+    {
+      "name": "2. READ event (GET)",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{google_access_token}}", "type": "text" }
+        ],
+        "url": {
+          "raw": "https://www.googleapis.com/calendar/v3/calendars/{{calendar_id}}/events/{{event_id}}",
+          "protocol": "https",
+          "host": ["www", "googleapis", "com"],
+          "path": ["calendar", "v3", "calendars", "{{calendar_id}}", "events", "{{event_id}}"]
+        },
+        "description": "Reads the event created in request 1 (its id was auto-saved)."
+      }
+    },
+    {
+      "name": "3. UPDATE event (PATCH)",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{google_access_token}}", "type": "text" },
+          { "key": "Content-Type", "value": "application/json", "type": "text" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"summary\": \"Kickoff — RESCHEDULED from Postman\"\n}"
+        },
+        "url": {
+          "raw": "https://www.googleapis.com/calendar/v3/calendars/{{calendar_id}}/events/{{event_id}}",
+          "protocol": "https",
+          "host": ["www", "googleapis", "com"],
+          "path": ["calendar", "v3", "calendars", "{{calendar_id}}", "events", "{{event_id}}"]
+        },
+        "description": "PATCH = partial update: only the fields you send change (Google's events reference documents patch semantics). Watch the title change live in the calendar."
+      }
+    },
+    {
+      "name": "4. DELETE event (DELETE)",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{google_access_token}}", "type": "text" }
+        ],
+        "url": {
+          "raw": "https://www.googleapis.com/calendar/v3/calendars/{{calendar_id}}/events/{{event_id}}",
+          "protocol": "https",
+          "host": ["www", "googleapis", "com"],
+          "path": ["calendar", "v3", "calendars", "{{calendar_id}}", "events", "{{event_id}}"]
+        },
+        "description": "Expect 204 No Content. Run it twice on purpose: the second answers 410 Gone — 'already deleted' is a state to expect, not a bug (Module 2's 404 lesson, Google flavor)."
+      }
+    },
+    {
+      "name": "5. LIST upcoming events (GET)",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{google_access_token}}", "type": "text" }
+        ],
+        "url": {
+          "raw": "https://www.googleapis.com/calendar/v3/calendars/{{calendar_id}}/events?maxResults=5&orderBy=startTime&singleEvents=true",
+          "protocol": "https",
+          "host": ["www", "googleapis", "com"],
+          "path": ["calendar", "v3", "calendars", "{{calendar_id}}", "events"],
+          "query": [
+            { "key": "maxResults", "value": "5" },
+            { "key": "orderBy", "value": "startTime" },
+            { "key": "singleEvents", "value": "true" }
+          ]
+        },
+        "description": "Bonus: the list endpoint — useful for the homework and for verifying what the service account can actually see."
+      }
+    }
+  ]
+}

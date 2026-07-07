@@ -1,0 +1,32 @@
+%%{init: {'theme': 'base', 'themeVariables': {
+  'actorBkg': '#e9f2fd',
+  'actorBorder': '#0b6bcb',
+  'actorTextColor': '#18212e',
+  'actorLineColor': '#d5dbe4',
+  'signalColor': '#33404f',
+  'signalTextColor': '#18212e',
+  'labelBoxBkgColor': '#fbf0e0',
+  'labelBoxBorderColor': '#b4590b',
+  'labelTextColor': '#18212e',
+  'noteBkgColor': '#fbf0e0',
+  'noteBorderColor': '#b4590b',
+  'noteTextColor': '#18212e',
+  'sequenceNumberColor': '#ffffff'
+}}}%%
+sequenceDiagram
+    autonumber
+    participant S as Server / CI Pipeline<br/>(sf CLI today)
+    participant K as Private Key<br/>(your certificate pair)
+    participant T as Salesforce<br/>Token Endpoint
+    participant API as Salesforce<br/>REST API
+
+    Note over S: Writes a tiny JSON claim:<br/>iss = consumer key, sub = username,<br/>aud = login.salesforce.com, exp = now + 3 min
+    S->>K: Sign the claim (RSA SHA-256)
+    K-->>S: Signed JWT — a tamper-proof "sealed letter"
+    S->>T: POST /services/oauth2/token<br/>grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer<br/>assertion=&lt;signed JWT&gt;
+    T->>T: Verify signature with the app's uploaded<br/>X.509 certificate + check user is pre-authorized
+    T-->>S: 200 OK — access_token (Bearer)<br/>NO refresh token — just sign a fresh JWT next time
+    S->>API: GET /services/data/...<br/>Authorization: Bearer &lt;access_token&gt;
+    API-->>S: JSON records
+
+    Note over S,T: No secret ever crosses the network —<br/>only a signature the private key could have made

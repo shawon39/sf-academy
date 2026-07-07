@@ -1,0 +1,175 @@
+{
+  "info": {
+    "name": "Module 3 — Web Server + PKCE (Salesforce + Dropbox)",
+    "description": "Two folders:\n\n1. 'Inbound — Salesforce (as yourself)': first get a token via Postman's OAuth helper (NOT a request — see below), then run the requests.\n2. 'Project — Dropbox': Session A of the Document Filer project — consent, list, upload, share.\n\nHOW TO GET THE SALESFORCE TOKEN (Lab 1):\nCollection > Authorization tab > OAuth 2.0 > Configure New Token:\n- Grant type: Authorization Code (With PKCE)\n- Callback URL: https://oauth.pstmn.io/v1/callback  (must be on the ECA's Callback URL list)\n- Auth URL: {{my_domain}}/services/oauth2/authorize\n- Access Token URL: {{my_domain}}/services/oauth2/token\n- Client ID / Secret: ECA consumer key + secret\n- Code Challenge Method: SHA-256\n- Scope: api refresh_token\nGet New Access Token > log in > Allow > copy tokens into the variables access_token / refresh_token.\n\nHOW TO GET THE DROPBOX TOKEN (Project Session A):\nSame helper on the 'Project — Dropbox' folder:\n- Auth URL: https://www.dropbox.com/oauth2/authorize?token_access_type=offline   ← offline = refresh token!\n- Access Token URL: https://api.dropboxapi.com/oauth2/token\n- Client ID / Secret: Dropbox App key / App secret\n- Code Challenge Method: SHA-256 · Scope: leave empty (Dropbox uses the app's Permissions tab)\nSave the token into dropbox_access_token.\n\nVariables to set: my_domain, consumer_key, consumer_secret (Salesforce); the Dropbox tokens come from the helper.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "my_domain", "value": "https://YOURCOMPANY.my.salesforce.com", "type": "string" },
+    { "key": "consumer_key", "value": "PASTE_CONSUMER_KEY", "type": "string" },
+    { "key": "consumer_secret", "value": "PASTE_CONSUMER_SECRET", "type": "string" },
+    { "key": "api_version", "value": "64.0", "type": "string" },
+    { "key": "access_token", "value": "", "type": "string" },
+    { "key": "refresh_token", "value": "", "type": "string" },
+    { "key": "dropbox_access_token", "value": "", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "Inbound — Salesforce (as yourself)",
+      "description": "Run after completing the OAuth-helper login described in the collection description. These calls act as YOU — compare with Module 2's collection where the same endpoints act as the integration user.",
+      "item": [
+        {
+          "name": "1. Who am I? (userinfo)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}", "type": "text" }
+            ],
+            "url": {
+              "raw": "{{my_domain}}/services/oauth2/userinfo",
+              "host": ["{{my_domain}}"],
+              "path": ["services", "oauth2", "userinfo"]
+            },
+            "description": "Returns YOUR name/email/user id. Same endpoint with a Module 2 client-credentials token returns the integration user — same org, different flow, different identity."
+          }
+        },
+        {
+          "name": "2. SOQL Query — as yourself",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}", "type": "text" }
+            ],
+            "url": {
+              "raw": "{{my_domain}}/services/data/v{{api_version}}/query?q=SELECT Id, Name FROM Account LIMIT 5",
+              "host": ["{{my_domain}}"],
+              "path": ["services", "data", "v{{api_version}}", "query"],
+              "query": [{ "key": "q", "value": "SELECT Id, Name FROM Account LIMIT 5" }]
+            },
+            "description": "Runs with YOUR permissions and sharing — an admin sees more than Module 2's least-privilege integration user did."
+          }
+        },
+        {
+          "name": "3. Refresh the token manually",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const json = pm.response.json();",
+                  "    pm.collectionVariables.set('access_token', json.access_token);",
+                  "    if (json.refresh_token) {",
+                  "        pm.collectionVariables.set('refresh_token', json.refresh_token);",
+                  "        console.log('Rotation is ON — new refresh token saved.');",
+                  "    } else {",
+                  "        console.log('Fresh access token saved (rotation off — keep the old refresh token).');",
+                  "    }",
+                  "}",
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "grant_type", "value": "refresh_token", "type": "text" },
+                { "key": "refresh_token", "value": "{{refresh_token}}", "type": "text" },
+                { "key": "client_id", "value": "{{consumer_key}}", "type": "text" },
+                { "key": "client_secret", "value": "{{consumer_secret}}", "type": "text" }
+              ]
+            },
+            "url": {
+              "raw": "{{my_domain}}/services/oauth2/token",
+              "host": ["{{my_domain}}"],
+              "path": ["services", "oauth2", "token"]
+            },
+            "description": "The refresh token flow by hand, so it's never magic: fresh access token, no browser, no login. This is how mobile apps stay signed in for months."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Project — Dropbox",
+      "description": "Document Filer, Session A. Get the token via the OAuth helper first (see collection description — remember token_access_type=offline on the Auth URL, and leave Scope empty).",
+      "item": [
+        {
+          "name": "1. Who am I? (get_current_account)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{dropbox_access_token}}", "type": "text" }
+            ],
+            "url": {
+              "raw": "https://api.dropboxapi.com/2/users/get_current_account",
+              "protocol": "https",
+              "host": ["api", "dropboxapi", "com"],
+              "path": ["2", "users", "get_current_account"]
+            },
+            "description": "Dropbox RPC endpoints are POST-based. Returns the connected account — proof the consent worked."
+          }
+        },
+        {
+          "name": "2. List the app folder",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{dropbox_access_token}}", "type": "text" },
+              { "key": "Content-Type", "value": "application/json", "type": "text" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"path\": \"\"\n}" },
+            "url": {
+              "raw": "https://api.dropboxapi.com/2/files/list_folder",
+              "protocol": "https",
+              "host": ["api", "dropboxapi", "com"],
+              "path": ["2", "files", "list_folder"]
+            },
+            "description": "Empty path \"\" = the app folder's root (App-folder access type keeps the integration in its own sandbox folder)."
+          }
+        },
+        {
+          "name": "3. Upload a file (NOTE: content host + header args)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{dropbox_access_token}}", "type": "text" },
+              { "key": "Dropbox-API-Arg", "value": "{\"path\": \"/hello-from-postman.txt\", \"mode\": \"add\", \"autorename\": true}", "type": "text" },
+              { "key": "Content-Type", "value": "application/octet-stream", "type": "text" }
+            ],
+            "body": { "mode": "raw", "raw": "Hello Dropbox — this body is the raw file content." },
+            "url": {
+              "raw": "https://content.dropboxapi.com/2/files/upload",
+              "protocol": "https",
+              "host": ["content", "dropboxapi", "com"],
+              "path": ["2", "files", "upload"]
+            },
+            "description": "Two things to notice: (1) the host is content.dropboxapi.com — NOT api. — because content endpoints live on their own host; (2) the JSON parameters ride in the Dropbox-API-Arg HEADER because the body is busy carrying the file bytes. Header must be ASCII-safe."
+          }
+        },
+        {
+          "name": "4. Create a shared link",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{dropbox_access_token}}", "type": "text" },
+              { "key": "Content-Type", "value": "application/json", "type": "text" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"path\": \"/hello-from-postman.txt\"\n}" },
+            "url": {
+              "raw": "https://api.dropboxapi.com/2/sharing/create_shared_link_with_settings",
+              "protocol": "https",
+              "host": ["api", "dropboxapi", "com"],
+              "path": ["2", "sharing", "create_shared_link_with_settings"]
+            },
+            "description": "The response's 'url' opens the file in any browser. Run it twice to meet 409 shared_link_already_exists — links are create-once (the Apex service handles this by fetching the existing link)."
+          }
+        }
+      ]
+    }
+  ]
+}

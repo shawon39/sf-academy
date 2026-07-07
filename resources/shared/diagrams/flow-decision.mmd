@@ -1,0 +1,14 @@
+flowchart LR
+    A["I need one system to call<br/>another system's API"] --> B{"Is a human present<br/>to log in?"}
+    B -- "No — pure<br/>server-to-server" --> C{"Does security policy<br/>require certificates?"}
+    C -- "No — a well-guarded<br/>secret is acceptable" --> D["CLIENT CREDENTIALS FLOW<br/>Module 2"]
+    C -- "Yes — no shared<br/>secrets allowed" --> E["JWT BEARER FLOW<br/>Module 4"]
+    B -- "Yes — the app should<br/>act as that person" --> F["WEB SERVER FLOW + PKCE<br/>Module 3"]
+    F --> G["…kept alive by the<br/>REFRESH TOKEN FLOW<br/>Module 3"]
+    style A fill:#f5f8fb,stroke:#d5dbe4,stroke-width:1.5px
+    style B fill:#f5f8fb,stroke:#d5dbe4,stroke-width:1.5px
+    style C fill:#f5f8fb,stroke:#d5dbe4,stroke-width:1.5px
+    style D fill:#e6f4ec,stroke:#157a4c,stroke-width:2px
+    style E fill:#fbf0e0,stroke:#b4590b,stroke-width:2px
+    style F fill:#e9f2fd,stroke:#0b6bcb,stroke-width:2px
+    style G fill:#e9f2fd,stroke:#0b6bcb,stroke-dasharray:4

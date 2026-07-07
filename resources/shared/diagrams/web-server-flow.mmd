@@ -1,0 +1,36 @@
+%%{init: {'theme': 'base', 'themeVariables': {
+  'actorBkg': '#e9f2fd',
+  'actorBorder': '#0b6bcb',
+  'actorTextColor': '#18212e',
+  'actorLineColor': '#d5dbe4',
+  'signalColor': '#33404f',
+  'signalTextColor': '#18212e',
+  'labelBoxBkgColor': '#fbf0e0',
+  'labelBoxBorderColor': '#b4590b',
+  'labelTextColor': '#18212e',
+  'noteBkgColor': '#fbf0e0',
+  'noteBorderColor': '#b4590b',
+  'noteTextColor': '#18212e',
+  'sequenceNumberColor': '#ffffff'
+}}}%%
+sequenceDiagram
+    autonumber
+    actor U as Human User<br/>(browser)
+    participant App as Web App<br/>(Postman today)
+    participant AZ as Salesforce<br/>Authorize Endpoint
+    participant T as Salesforce<br/>Token Endpoint
+    participant API as Salesforce<br/>REST API
+
+    Note over App: Creates a random code_verifier,<br/>hashes it → code_challenge (PKCE)
+    App->>AZ: GET /services/oauth2/authorize<br/>response_type=code, client_id,<br/>redirect_uri, code_challenge
+    AZ->>U: Salesforce login page + consent screen
+    U->>AZ: Username + password (+ MFA), click Allow
+    AZ-->>App: Redirect to callback URL<br/>?code=AUTH_CODE (temporary!)
+    App->>T: POST /services/oauth2/token<br/>grant_type=authorization_code, code,<br/>client_id, client_secret, redirect_uri,<br/>code_verifier (PKCE proof)
+    T-->>App: access_token + refresh_token
+    App->>API: GET /services/data/...<br/>Authorization: Bearer &lt;access_token&gt;
+    API-->>App: JSON — as THIS user, with THEIR permissions
+
+    Note over App,T: Later, when the access token expires…
+    App->>T: POST /services/oauth2/token<br/>grant_type=refresh_token + refresh_token
+    T-->>App: fresh access_token — no new login needed

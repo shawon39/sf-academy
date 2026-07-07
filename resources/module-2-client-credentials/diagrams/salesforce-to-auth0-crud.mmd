@@ -1,0 +1,31 @@
+%%{init: {'theme': 'base', 'themeVariables': {
+  'actorBkg': '#e9f2fd',
+  'actorBorder': '#0b6bcb',
+  'actorTextColor': '#18212e',
+  'actorLineColor': '#d5dbe4',
+  'signalColor': '#33404f',
+  'signalTextColor': '#18212e',
+  'labelBoxBkgColor': '#fbf0e0',
+  'labelBoxBorderColor': '#b4590b',
+  'labelTextColor': '#18212e',
+  'noteBkgColor': '#fbf0e0',
+  'noteBorderColor': '#b4590b',
+  'noteTextColor': '#18212e',
+  'sequenceNumberColor': '#ffffff'
+}}}%%
+sequenceDiagram
+    autonumber
+    participant X as Apex<br/>(Anonymous / Queueable)
+    participant N as Named Credential<br/>Engine (Salesforce)
+    participant T as Auth0 Token Endpoint<br/>your-tenant.us.auth0.com/oauth/token
+    participant M as Auth0 Management API<br/>/api/v2/users
+
+    X->>N: callout:Auth0_Mgmt_API/api/v2/users
+    Note over N: No valid token cached?<br/>Get one first — automatically.
+    N->>T: POST grant_type=client_credentials<br/>client_id + client_secret (from Principal)<br/>+ audience (Custom Request Parameter)
+    T-->>N: 200 OK — access_token (Bearer)
+    N->>M: POST /api/v2/users (create)<br/>GET /api/v2/users/{id} (read)<br/>PATCH /api/v2/users/{id} (update)<br/>DELETE /api/v2/users/{id} (delete)
+    M-->>N: 2xx + JSON
+    N-->>X: HttpResponse
+
+    Note over X,M: Full CRUD with one setup —<br/>the token dance never appears in your code

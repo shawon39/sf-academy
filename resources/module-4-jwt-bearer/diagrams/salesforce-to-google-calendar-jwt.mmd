@@ -1,0 +1,31 @@
+%%{init: {'theme': 'base', 'themeVariables': {
+  'actorBkg': '#e9f2fd',
+  'actorBorder': '#0b6bcb',
+  'actorTextColor': '#18212e',
+  'actorLineColor': '#d5dbe4',
+  'signalColor': '#33404f',
+  'signalTextColor': '#18212e',
+  'labelBoxBkgColor': '#fbf0e0',
+  'labelBoxBorderColor': '#b4590b',
+  'labelTextColor': '#18212e',
+  'noteBkgColor': '#fbf0e0',
+  'noteBorderColor': '#b4590b',
+  'noteTextColor': '#18212e',
+  'sequenceNumberColor': '#ffffff'
+}}}%%
+sequenceDiagram
+    autonumber
+    participant X as Apex<br/>(GoogleCalendarService)
+    participant C as Salesforce Certificate<br/>"GoogleSA" (private key)
+    participant T as Google Token Endpoint<br/>oauth2.googleapis.com/token
+    participant G as Google Calendar API<br/>www.googleapis.com/calendar/v3
+
+    X->>X: Auth.JWT — write the claims:<br/>iss = service account email<br/>scope = calendar.events<br/>aud = the token endpoint
+    X->>C: Auth.JWS — sign it (RS256)<br/>private key never leaves Salesforce
+    C-->>X: signed JWT (sealed letter)
+    X->>T: Auth.JWTBearerTokenExchange<br/>grant_type=…jwt-bearer&amp;assertion=&lt;JWT&gt;
+    T-->>X: access_token (Bearer, ~1 hour)
+    X->>G: POST /calendars/{calendarId}/events (create)<br/>GET · PATCH · DELETE /events/{eventId}
+    G-->>X: 2xx + event JSON (id, htmlLink…)
+
+    Note over X,G: Same sealed-letter recipe as the inbound lab —<br/>this time Google is the castle checking the seal
