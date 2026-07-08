@@ -2362,20 +2362,63 @@ System.debug('Booked! ' + link);
 { <span class="k">"inputs"</span>: [ { <span class="k">"YourInputVariable"</span>: <span class="v">"value"</span> } ] }</code></pre>
   <p>Three requirements: the flow is <strong>autolaunched</strong> (no screens — nobody's there to click), it's <strong>Active</strong>, and its variables are explicitly marked <strong>Available for input</strong> / <strong>Available for output</strong>. That checkbox is the API contract.</p>
 
+  <h2>Build it — "Lead Intake API", every click</h2>
+  <p>The business story: a partner website wants to push leads into your org. Instead of exposing objects directly, you expose <em>one controlled flow</em> that applies your rules. Three elements, ~10 minutes.</p>
+
   <div class="step purple">
-    <div class="head">Build it — "Lead Intake API" (10 minutes, 3 elements)</div>
+    <div class="head">Step 1 — Create the flow shell</div>
     <div class="body">
-      <p>The business story: a partner website wants to push leads into your org. Instead of exposing objects directly, you expose <em>one controlled flow</em> that applies your rules.</p>
       <ol>
-        <li><strong>Setup → Flows → New Flow → Start From Scratch → Autolaunched Flow (No Trigger).</strong></li>
-        <li>In the Toolbox, create three <strong>Text variables</strong>:
+        <li>Setup → Quick Find: <code>Flows</code> → <strong>New Flow</strong>.</li>
+        <li>Choose <strong>Start From Scratch</strong> → Next → flow type: <strong>Autolaunched Flow (No Trigger)</strong> → <strong>Create</strong>.</li>
+        <li>You land on an empty canvas with a <em>Start</em> and <em>End</em> element. Everything you add goes between them.</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="step purple">
+    <div class="head">Step 2 — Create the three variables (the API contract)</div>
+    <div class="body">
+      <p>Open the <strong>Toolbox</strong> (the panel on the left — if you see tabs, pick <strong>Manager</strong>) and click <strong>New Resource</strong>. Repeat three times with these values:</p>
+      <table>
+        <thead><tr><th>Resource Type</th><th>API Name</th><th>Data Type</th><th>Availability checkboxes</th></tr></thead>
+        <tbody>
+          <tr><td>Variable</td><td><code>CompanyName</code></td><td>Text</td><td>✅ <strong>Available for input</strong></td></tr>
+          <tr><td>Variable</td><td><code>ContactLastName</code></td><td>Text</td><td>✅ <strong>Available for input</strong></td></tr>
+          <tr><td>Variable</td><td><code>NewLeadId</code></td><td>Text</td><td>✅ <strong>Available for output</strong></td></tr>
+        </tbody>
+      </table>
+      <div class="callout concept"><span class="t">💡 Those two checkboxes ARE the API</span>
+        "Available for input" makes a variable a valid key in the request's <code>inputs</code> JSON; "Available for output" puts it in the response's <code>outputValues</code>. Spelling and capitalization of the API names must match the JSON exactly — they're contract terms.</div>
+    </div>
+  </div>
+
+  <div class="step purple">
+    <div class="head">Step 3 — One Create Records element</div>
+    <div class="body">
+      <ol>
+        <li>On the canvas, click the <strong>＋</strong> between <em>Start</em> and <em>End</em> → choose <strong>Create Records</strong>.</li>
+        <li><strong>Label:</strong> <code>Create the Lead</code> (API name auto-fills).</li>
+        <li><strong>How Many Records to Create:</strong> One · <strong>How to Set the Record Fields:</strong> <em>Use separate resources, and literal values</em>.</li>
+        <li><strong>Object:</strong> Lead. Then add three field rows:
           <ul>
-            <li><code>CompanyName</code> — check <strong>Available for input</strong></li>
-            <li><code>ContactLastName</code> — check <strong>Available for input</strong></li>
-            <li><code>NewLeadId</code> — check <strong>Available for output</strong></li>
+            <li><em>LastName</em> ← <code>{!ContactLastName}</code></li>
+            <li><em>Company</em> ← <code>{!CompanyName}</code></li>
+            <li><em>LeadSource</em> ← <code>Web</code> (typed as a literal)</li>
           </ul></li>
-        <li>Add a <strong>Create Records</strong> element: one Lead, setting <em>LastName</em> = <code>{!ContactLastName}</code>, <em>Company</em> = <code>{!CompanyName}</code>, <em>LeadSource</em> = <code>Web</code>. Under the element's advanced/manual options, store the created <strong>Lead ID in <code>{!NewLeadId}</code></strong>.</li>
-        <li>Save as <strong>Lead Intake API</strong> — note the auto-generated API name <code>Lead_Intake_API</code> (that's the URL segment). <strong>Activate.</strong></li>
+        <li>Near the bottom, check <strong>Manually assign variables</strong> — a <em>Store Lead ID</em> box appears. Set it to <code>{!NewLeadId}</code>. That's how the created record's ID reaches your output variable.</li>
+        <li>Click <strong>Done</strong>.</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="step purple">
+    <div class="head">Step 4 — Save, test inside Flow Builder, activate</div>
+    <div class="body">
+      <ol>
+        <li><strong>Save</strong> → Flow Label: <code>Lead Intake API</code>. Note the auto-generated <strong>Flow API Name</strong> <code>Lead_Intake_API</code> — that exact string is the URL segment Postman will call.</li>
+        <li>Before touching Postman, click <strong>Debug</strong> → the debug panel asks for your input variables (because they're marked available for input). Enter a test company and last name → <strong>Run</strong>. The debug detail should show the Create Records element succeeding and <code>NewLeadId</code> being set. <em>Test in the builder first, then over the API — two layers of certainty.</em></li>
+        <li>Click <strong>Activate</strong>. Only Active flows are invocable from REST.</li>
       </ol>
       <div class="callout action"><span class="t">✅ The gate you control</span>
         The partner can't touch anything except what this flow does. Want dedupe rules, a default owner, a "partner" record type? Add elements — the API contract (inputs/outputs) stays identical. That's why teams expose flows instead of raw objects.</div>
@@ -2545,7 +2588,7 @@ Content-Type: application/x-www-form-urlencoded
 <section class="topic" id="p4-project-b">
   <span class="phase-tag p4">Module 5 · Flow Integrations · Mini-Project</span>
   <h1>🏗 Project Session B — The Travel Desk Flow</h1>
-  <p class="lead">The full arc in one build: <strong>authenticate → call → parse → write back → handle failure.</strong> A rep opens an Account, types the client's city, and the flow fetches the official IATA city code and coordinates from Amadeus — through real OAuth it never has to think about — and stamps them on the record.</p>
+  <p class="lead">The full arc in one build: <strong>authenticate → call → parse → write back → handle failure.</strong> A rep opens an Account, types the client's city, and the flow fetches the official IATA city code and coordinates from Amadeus — through real OAuth it never has to think about — and stamps them on the record. Every click is below; build it exactly once with the guide, then once without.</p>
 
   <div class="callout action"><span class="t">✅ Session B exit criteria</span>
     From an Account, the flow finds a city live in Amadeus, shows it for confirmation, and updates the Account's travel fields — with a working fault screen when things go wrong. ~60 minutes.</div>
@@ -2562,55 +2605,67 @@ Content-Type: application/x-www-form-urlencoded
   </div>
 
   <div class="step purple">
-    <div class="head">B2 — Start the screen flow (and receive the record automatically)</div>
+    <div class="head">B2 — Flow shell, the recordId variable, and Screen 1</div>
     <div class="body">
       <ol>
-        <li>Setup → Flows → New Flow → <strong>Screen Flow</strong>.</li>
-        <li>Create a <strong>Text variable named exactly <code>recordId</code></strong>, checked <strong>Available for input</strong>. That magic name is how Lightning record pages hand the flow the Account it's sitting on — the same input-variable contract as topic 2's API, used by the page instead of Postman.</li>
-        <li>Add a <strong>Screen</strong> (<em>Ask City</em>) with a required Text component <code>CityKeyword</code>, help text: <em>"Start of the city name, 2–10 characters — e.g. PAR or PARIS."</em> (Those bounds are from Amadeus's own spec for the <code>keyword</code> parameter.)</li>
+        <li>Setup → <code>Flows</code> → <strong>New Flow</strong> → Start From Scratch → <strong>Screen Flow</strong> → Create.</li>
+        <li>Toolbox → <strong>New Resource</strong>: Resource Type <strong>Variable</strong> · API Name exactly <code>recordId</code> · Data Type <strong>Text</strong> · ✅ <strong>Available for input</strong> → Done. That magic name is how Lightning record pages hand the flow the Account it's sitting on — the same input-variable contract as topic 2's API, used by the page instead of Postman.</li>
+        <li>Click <strong>＋</strong> after <em>Start</em> → <strong>Screen</strong>. Label: <code>Ask City</code>.</li>
+        <li>From the component list on the left, drag a <strong>Text</strong> component onto the screen canvas. Configure it: Label <code>City keyword</code> · API Name <code>CityKeyword</code> · ✅ Require · Help Text: <em>"Start of the city name, 2–10 characters — e.g. PAR or PARIS."</em> (Those bounds are from Amadeus's own spec for the <code>keyword</code> parameter.) → <strong>Done</strong>.</li>
       </ol>
     </div>
   </div>
 
   <div class="step purple">
-    <div class="head">B3 — Create the HTTP Callout action</div>
+    <div class="head">B3 — Create the HTTP Callout action (the wizard, click by click)</div>
     <div class="body">
       <ol>
-        <li><strong>Action → Create HTTP Callout.</strong> External service name: <code>Amadeus_Service</code> · Named Credential: <strong><code>Amadeus</code></strong> — the real-OAuth credential from Session A.</li>
-        <li>Action label <code>Search Cities</code> · Method <strong>GET</strong> · URL Path <code>/v1/reference-data/locations/cities</code> (no <code>?</code>) · Query Parameter Keys: <code>keyword</code>, <code>max</code>.</li>
-        <li><strong>Provide Sample Response:</strong> paste the <em>real JSON you saved in Session A</em> → Review. Confirm the structure shows <code>data</code> as a <strong>List</strong>, with <code>name</code> and <code>iataCode</code> as text and <code>geoCode → latitude/longitude</code> as numbers → Done.</li>
-        <li>In the action's configuration: <code>keyword</code> = <code>{!CityKeyword}</code>, <code>max</code> = <code>1</code> (autocomplete APIs rank best-first; taking the top match keeps v1 honest and simple — the homework upgrades to a pick-list of 5).</li>
+        <li>Click <strong>＋</strong> after the screen → <strong>Action</strong>. In the action dialog, choose <strong>Create HTTP Callout</strong> (a button/option alongside the action search).</li>
+        <li><strong>Wizard part 1 — the service:</strong> Name <code>Amadeus_Service</code> · Named Credential: <strong><code>Amadeus</code></strong> (Session A's real-OAuth credential — if it's missing from this picklist, your user lacks principal access; see troubleshooting) → <strong>Next</strong>.</li>
+        <li><strong>Wizard part 2 — the invocable action:</strong>
+          <ul>
+            <li>Label <code>Search Cities</code> (API name auto-fills <code>Search_Cities</code>) · Method <strong>GET</strong> · URL Path <code>/v1/reference-data/locations/cities</code> — path only, no <code>?</code>.</li>
+            <li>Under query parameters, click <strong>+ Add Key</strong> twice: key <code>keyword</code> (Data Type String, mark it required) and key <code>max</code> (Data Type Integer).</li>
+          </ul></li>
+        <li><strong>The sample response:</strong> in the response section, choose to provide a sample (<em>New</em> / <em>Provide Sample Response</em> — or use the <em>Connect</em> option to fetch one live). Paste the <em>real JSON you saved in Session A</em> → <strong>Review</strong>. Flow shows the generated data structure — confirm <code>data</code> is a <strong>List</strong>, <code>name</code>/<code>iataCode</code> are Strings, and <code>geoCode → latitude/longitude</code> are Numbers → <strong>Done</strong>.</li>
+        <li>You're returned to the action's configuration dialog (this is the <em>instance</em> of your new action in this flow). Set: <code>keyword</code> = <code>{!CityKeyword}</code> · <code>max</code> = <code>1</code> (switch the optional parameter on to set it) → <strong>Done</strong>.</li>
       </ol>
-      <div class="callout concept"><span class="t">💡 Data handling, done by the builder</span>
-        From one pasted sample, Flow generated a typed structure: a <em>collection</em> for <code>data</code>, text for the codes, <em>numbers</em> for the coordinates. No <code>JSON.deserializeUntyped</code>, no casting — compare with Module 2's Apex, where parsing was half the class.</div>
+      <div class="callout concept"><span class="t">💡 What just happened</span>
+        Flow generated an External Services registration + typed Apex classes from one pasted JSON (check Setup → External Services → <code>Amadeus_Service</code>). Its response is now a first-class Flow resource: <code>{!Search_Cities.2XX…}</code>. With <code>max=1</code>, taking the top match keeps v1 honest — autocomplete APIs rank best-first; homework upgrades to a pick-list of 5.</div>
     </div>
   </div>
 
   <div class="step purple">
     <div class="head">B4 — Parse the array: the Loop is your JSON parser</div>
     <div class="body">
-      <p>The response's <code>data</code> is a collection, and Flow reads collections with a <strong>Loop</strong>:</p>
       <ol>
-        <li>Create four variables: <code>CityName</code> (Text), <code>CityCode</code> (Text), <code>CityLat</code> (Number), <code>CityLon</code> (Number).</li>
-        <li>Add a <strong>Loop</strong> over the action's output collection — drill into the result until you find the <code>data</code> list (it lives under the <strong>2XX</strong> response resource).</li>
-        <li>Inside the loop, one <strong>Assignment</strong>: <code>CityName</code> = <em>current item</em> → <code>name</code> · <code>CityCode</code> = → <code>iataCode</code> · <code>CityLat</code> = → <code>geoCode.latitude</code> · <code>CityLon</code> = → <code>geoCode.longitude</code>.</li>
+        <li>Toolbox → <strong>New Resource</strong> four times: <code>CityName</code> (Text), <code>CityCode</code> (Text), <code>CityLat</code> (Number), <code>CityLon</code> (Number) — plain variables, no availability boxes needed.</li>
+        <li>Click <strong>＋</strong> after the action → <strong>Loop</strong>. Label: <code>Read Matches</code>. <strong>Collection Variable:</strong> drill into <em>Outputs from Search_Cities</em> → <strong>2XX</strong> → <strong>data</strong>. Direction: first to last → Done. The canvas now shows two branches: <strong>For Each</strong> (runs per item) and <strong>After Last</strong> (runs when done).</li>
+        <li>On the <strong>For Each</strong> branch, click <strong>＋</strong> → <strong>Assignment</strong>. Label: <code>Copy City Fields</code>. Add four rows — the loop's current item is a resource named after the loop (<code>{!Read_Matches}</code>), so:
+          <ul>
+            <li><code>{!CityName}</code> Equals <code>{!Read_Matches.name}</code></li>
+            <li><code>{!CityCode}</code> Equals <code>{!Read_Matches.iataCode}</code></li>
+            <li><code>{!CityLat}</code> Equals <code>{!Read_Matches.geoCode.latitude}</code></li>
+            <li><code>{!CityLon}</code> Equals <code>{!Read_Matches.geoCode.longitude}</code></li>
+          </ul></li>
       </ol>
-      <p>With <code>max=1</code> the loop runs exactly once — training wheels on. When homework raises <code>max</code> to 5, this same loop becomes a real iterator building a numbered list. <strong>The mental model to keep: in Flow, a Loop + Assignment is what <code>for(…)</code> + field access is in Apex.</strong></p>
+      <p>With <code>max=1</code> the loop runs exactly once — training wheels on. <strong>The mental model to keep: in Flow, a Loop + Assignment is what <code>for(…)</code> + field access is in Apex.</strong></p>
     </div>
   </div>
 
   <div class="step purple">
-    <div class="head">B5 — Confirm, write back, and handle failure</div>
+    <div class="head">B5 — Confirm, write back, and handle failure (on the After Last branch)</div>
     <div class="body">
       <ol>
-        <li><strong>Screen 2</strong> (<em>Confirm</em>), Display Text:
+        <li>On the loop's <strong>After Last</strong> branch, click <strong>＋</strong> → <strong>Screen</strong>. Label <code>Confirm</code>; drag a <strong>Display Text</strong> component in and paste (insert the variables with the <code>{!…}</code> resource picker):
           <pre><code>Found: {!CityName} ({!CityCode})
 Coordinates: {!CityLat}, {!CityLon}
 
 Save this to the Account?</code></pre></li>
-        <li><strong>Update Records</strong>: Account with Id = <code>{!recordId}</code>, setting <code>Travel_City_Code__c</code> = <code>{!CityCode}</code> and <code>Travel_City_Name__c</code> = <code>{!CityName}</code>.</li>
-        <li><strong>Fault paths, both of them:</strong> drag the <strong>Fault</strong> connector from the <em>Search Cities</em> action <em>and</em> from <em>Update Records</em> to a fault screen showing <code>{!$Flow.FaultMessage}</code>. APIs time out, tokens get revoked, records get locked — a Travel Desk that fails silently books nobody anywhere.</li>
-        <li>Save as <strong>Travel Desk</strong>, Activate — then make it real: <strong>Lightning App Builder → Account record page → drag the Flow component</strong>, pick <em>Travel Desk</em>, and check <em>Pass record ID into this variable</em>. Now it lives where reps actually work.</li>
+        <li><strong>＋</strong> after Confirm → <strong>Update Records</strong>. Label <code>Stamp the Account</code> · How to Find Records: <em>Specify conditions to identify records, and set fields individually</em> · Object <strong>Account</strong> · Condition: <em>Id</em> Equals <code>{!recordId}</code> · Set Field Values: <em>Travel_City_Code__c</em> ← <code>{!CityCode}</code>, <em>Travel_City_Name__c</em> ← <code>{!CityName}</code> → Done.</li>
+        <li><strong>Fault paths, both of them:</strong> open the <em>Search Cities</em> element's menu (the <strong>⌄/⋯</strong> on the element) → <strong>Add Fault Path</strong> → on the fault branch add a <strong>Screen</strong> with a Display Text: <code>Something went wrong: {!$Flow.FaultMessage}</code>. Repeat for <em>Stamp the Account</em> (its fault screen can reuse the same message). APIs time out, tokens get revoked, records get locked — a Travel Desk that fails silently books nobody anywhere.</li>
+        <li><strong>Save</strong> as <code>Travel Desk</code> → <strong>Debug</strong> → enter <code>PAR</code> (leave recordId blank in debug, or paste any Account Id to test the update too) → watch the debug log: the callout, the parsed values, the update. Then <strong>Activate</strong>.</li>
+        <li>Make it real: open any Account → gear icon → <strong>Edit Page</strong> (Lightning App Builder) → drag the <strong>Flow</strong> component onto the page → select <em>Travel Desk</em> → check <strong>Pass record ID into this variable</strong> (under recordId) → Save → Activate the page if prompted.</li>
       </ol>
       <p><strong>The payoff:</strong> open any Account → type <code>PAR</code> → <em>"Found: PARIS (PAR)"</em> → Next → the fields are stamped. Behind that click: a cached OAuth token, a live API in Amadeus's test cloud, typed JSON parsing, and a DML write — and the person who built all of it never wrote a line of code. 🎉</p>
     </div>
@@ -2634,6 +2689,9 @@ Save this to the Account?</code></pre></li>
   <div class="callout security"><span class="t">🔒 Trace the secret (it never surfaces)</span>
     The API Secret exists in exactly one place: encrypted on the principal. The flow references a Named Credential; the rep sees a screen; the token lives ~30 minutes inside the engine's cache. Rotating the secret when someone leaves = re-typing one field in Setup — no flow edits, no deploys. That's what "authentication and authorization handled correctly" looks like in production.</div>
 
+  <div class="callout caution"><span class="t">⚠️ Label drift, one more time</span>
+    Flow Builder's wizard wording shifts slightly between releases (e.g. how the sample-response step and optional-parameter toggles are phrased). Match by role — service name → credential → method/path → parameter keys → sample → review — and the <a href="https://help.salesforce.com/s/articleView?id=platform.flow_http_callout_configure.htm&language=en_US&type=5">official configure doc</a> wins.</div>
+
   <div class="pager"><a href="#p4-project-a"><span class="dir">← Previous</span><span class="name">Project A</span></a><a class="next" href="#p4-project-c"><span class="dir">Next →</span><span class="name">Project C — No-Code Portal Provisioner</span></a></div>
 </section>
 
@@ -2641,47 +2699,68 @@ Save this to the Account?</code></pre></li>
 <section class="topic" id="p4-project-c">
   <span class="phase-tag p4">Module 5 · Flow Integrations · Mini-Project</span>
   <h1>🏗 Project Session C — The No-Code Portal Provisioner</h1>
-  <p class="lead">The victory lap. In Module 2 Session C, provisioning an Auth0 user from a Contact checkbox took a trigger, a Queueable, and a service class — real Apex, honestly earned. Today you rebuild the same automation <strong>with zero code</strong>, reusing the very same <code>Auth0_Mgmt_API</code> Named Credential.</p>
+  <p class="lead">The victory lap. In Module 2 Session C, provisioning an Auth0 user from a Contact checkbox took a trigger, a Queueable, and a service class — real Apex, honestly earned. Today you rebuild the same automation <strong>with zero code</strong>, reusing the very same <code>Auth0_Mgmt_API</code> Named Credential. Every click is below.</p>
 
   <div class="callout action"><span class="t">✅ Session C exit criteria</span>
     Ticking <em>Provision Portal Access</em> on a Contact creates the Auth0 user from a flow and writes the id back — no Apex anywhere in the chain. ~45–60 minutes.</div>
 
   <div class="step purple">
-    <div class="head">C1 — A POST callout this time (with a request body)</div>
+    <div class="head">C1 — The trigger, the guard conditions, and the async path</div>
     <div class="body">
       <ol>
-        <li>New <strong>Record-Triggered Flow</strong> → object <strong>Contact</strong> → trigger <strong>when created or updated</strong>.</li>
-        <li><strong>Entry conditions:</strong> <code>Provision_Portal_Access__c = True</code> AND <code>Auth0_User_Id__c Is Null True</code> — the same guard logic as Module 2's trigger, now as picklist rows.</li>
-        <li>Choose to <strong>include a Run Asynchronously path</strong>, and build everything that follows on that path.</li>
+        <li>Setup → <code>Flows</code> → <strong>New Flow</strong> → <strong>Record-Triggered Flow</strong> → Create. The Start configuration opens:</li>
+        <li><strong>Object:</strong> Contact · <strong>Trigger the Flow When:</strong> <em>A record is created or updated</em>.</li>
+        <li><strong>Entry Conditions</strong> — Condition Requirements: <em>All Conditions Are Met (AND)</em>, two rows:
+          <ul>
+            <li><code>Provision_Portal_Access__c</code> · Equals · <code>{!$GlobalConstant.True}</code></li>
+            <li><code>Auth0_User_Id__c</code> · Is Null · <code>{!$GlobalConstant.True}</code></li>
+          </ul>
+          The same guard logic as Module 2's trigger, now as picklist rows. (If you see a "when to run the flow for updated records" option, choose to run <em>only when a record is updated to meet the condition requirements</em> — that's the "just ticked" behavior.)</li>
+        <li><strong>Optimize the Flow for:</strong> <em>Actions and Related Records</em> (an after-save flow — callouts and cross-record updates live here).</li>
+        <li>Check <strong>✅ Include a Run Asynchronously path to access an external system after the original transaction for the triggering record is successfully committed</strong> — the long label is Salesforce telling you the whole story. → <strong>Done</strong>.</li>
+        <li>The canvas now shows <strong>two branches</strong>: <em>Run Immediately</em> and <em>Run Asynchronously</em>. <strong>Build everything that follows on the Run Asynchronously branch</strong> — leave Run Immediately empty.</li>
       </ol>
       <div class="callout concept"><span class="t">💡 The Queueable lesson, wearing a Flow costume</span>
-        Remember Module 2's rule — a trigger can't call out mid-save, so it enqueues a background job? Identical physics here: <strong>a record-triggered flow can only make callouts on the asynchronous path</strong>, which runs right after the save completes. Same reason, same solution, zero code. If your callout action refuses to run, you built it on the wrong path — top row of the troubleshooting table.</div>
+        Remember Module 2's rule — a trigger can't call out mid-save, so it enqueues a background job? Identical physics here: <strong>a record-triggered flow can only make callouts on the asynchronous path</strong>, which runs right after the save commits. Same reason, same solution, zero code. (You can watch queued async runs on Setup's <em>Time-Based Workflow</em> page — that's your "Apex Jobs" equivalent.)</div>
     </div>
   </div>
 
   <div class="step purple">
-    <div class="head">C2 — Build the Auth0 action (POST + body)</div>
+    <div class="head">C2 — Build the Auth0 action (POST + request body), click by click</div>
     <div class="body">
       <ol>
-        <li>On the async path: <strong>Action → Create HTTP Callout</strong>. External service name: <code>Auth0_Flow_Service</code>, Named Credential: <strong><code>Auth0_Mgmt_API</code></strong> — Module 2's, exactly as it sits in your org. (Its <code>audience</code> quirk, its encrypted principal — all still handled for you.)</li>
-        <li>Action label <code>Create Auth0 User</code> · Method <strong>POST</strong> · URL path <code>/api/v2/users</code>.</li>
-        <li><strong>Sample Request:</strong> paste Module 2's create-user body — <code>{"email": "x@example.com", "password": "TrainingP@ssw0rd2026!", "connection": "Username-Password-Authentication"}</code>. Flow generates a typed <em>body</em> resource from it.</li>
-        <li><strong>Sample Response:</strong> a trimmed real one is plenty: <code>{"user_id": "auth0|abc123", "email": "x@example.com"}</code>. Done.</li>
+        <li>On the <strong>Run Asynchronously</strong> branch: <strong>＋</strong> → <strong>Action</strong> → <strong>Create HTTP Callout</strong>.</li>
+        <li><strong>Wizard part 1:</strong> service name <code>Auth0_Flow_Service</code> · Named Credential <strong><code>Auth0_Mgmt_API</code></strong> — Module 2's, exactly as it sits in your org (its <code>audience</code> quirk, its encrypted principal — all still handled for you) → Next.</li>
+        <li><strong>Wizard part 2:</strong> Label <code>Create Auth0 User</code> · Method <strong>POST</strong> · URL Path <code>/api/v2/users</code>.</li>
+        <li><strong>Sample Request</strong> (POST needs a body schema): provide a sample request body — paste Module 2's create-user JSON:
+          <pre><code>{ <span class="k">"email"</span>: <span class="v">"x@example.com"</span>, <span class="k">"password"</span>: <span class="v">"TrainingP@ssw0rd2026!"</span>, <span class="k">"connection"</span>: <span class="v">"Username-Password-Authentication"</span> }</code></pre>
+          → Review → Flow generates a typed <em>body</em> structure (three Strings).</li>
+        <li><strong>Sample Response:</strong> a trimmed real one is plenty: <code>{"user_id": "auth0|abc123", "email": "x@example.com"}</code> → Review → <strong>Done</strong>. Leave the action's configuration dialog open — the body input will light up after C3's variable exists (you can click Done and come back).</li>
       </ol>
     </div>
   </div>
 
   <div class="step purple">
-    <div class="head">C3 — Assemble the body, call, write back</div>
+    <div class="head">C3 — Assemble the body, call, write back, catch faults</div>
     <div class="body">
       <ol>
-        <li><strong>New Resource → Variable</strong> of the generated Apex-defined body type; then an <strong>Assignment</strong> element fills it: <em>email</em> = <code>{!$Record.Email}</code>, <em>connection</em> = <code>Username-Password-Authentication</code>, <em>password</em> = a formula resource, e.g. <code>"Aa1!" &amp; LEFT(SUBSTITUTE({!$Flow.InterviewGuid}, "-", ""), 12)</code> — a fresh throwaway the user resets on first login.</li>
-        <li>The <strong>Create Auth0 User</strong> action, body = your variable.</li>
-        <li><strong>Update Records</strong> (the triggering Contact): <code>Auth0_User_Id__c</code> = the action's <code>2XX.user_id</code> output, <code>Provisioning_Status__c</code> = <em>"Provisioned by Flow"</em>.</li>
-        <li><strong>Fault path</strong> from the action → Update Records: <code>Provisioning_Status__c</code> = <code>{!$Flow.FaultMessage}</code> — errors land on the record where admins see them. Module 2's try/catch, as a connector.</li>
-        <li>Save as <strong>Portal Provisioner Flow</strong>, Activate. <strong>Deactivate Module 2's <code>ContactTrigger</code> path first</strong> if it's still live (Setup → Apex Triggers → edit → uncheck Active, or add a bypass) — two provisioners racing is a lesson for another day.</li>
+        <li><strong>The body variable:</strong> Toolbox → New Resource → Variable · API Name <code>Auth0UserBody</code> · Data Type <strong>Apex-Defined</strong> · Apex Class: pick the class the wizard just generated — search the picklist for a name containing <code>Auth0_Flow_Service</code> and the request-body suffix (generated names are long; there will be one obvious "…Request/body" match).</li>
+        <li><strong>The password formula:</strong> New Resource → <strong>Formula</strong> · API Name <code>TempPassword</code> · Data Type Text · Formula:
+          <pre><code>"Aa1!" &amp; LEFT(SUBSTITUTE({!$Flow.InterviewGuid}, "-", ""), 12)</code></pre>
+          — a fresh throwaway per run; the user resets it on first login.</li>
+        <li><strong>Fill the body:</strong> on the async branch, <em>before</em> the action, <strong>＋</strong> → <strong>Assignment</strong>, label <code>Build Auth0 Body</code>:
+          <ul>
+            <li><code>{!Auth0UserBody.email}</code> Equals <code>{!$Record.Email}</code></li>
+            <li><code>{!Auth0UserBody.connection}</code> Equals <code>Username-Password-Authentication</code> (literal text)</li>
+            <li><code>{!Auth0UserBody.password}</code> Equals <code>{!TempPassword}</code></li>
+          </ul>
+          (<code>$Record</code> is the triggering Contact — free in every record-triggered flow.)</li>
+        <li>Open the <strong>Create Auth0 User</strong> action's configuration → set <strong>Body</strong> = <code>{!Auth0UserBody}</code> → Done.</li>
+        <li><strong>Write back:</strong> <strong>＋</strong> after the action → <strong>Update Records</strong>, label <code>Stamp the Contact</code> · <em>Specify conditions…</em> · Object <strong>Contact</strong> · Condition <em>Id</em> Equals <code>{!$Record.Id}</code> · Set Field Values: <em>Auth0_User_Id__c</em> ← the action's output (drill <em>Outputs from Create_Auth0_User</em> → <strong>2XX</strong> → <code>user_id</code>), <em>Provisioning_Status__c</em> ← <code>Provisioned by Flow</code>.</li>
+        <li><strong>Fault path:</strong> on the action's menu → <strong>Add Fault Path</strong> → <strong>Update Records</strong> on the fault branch: same Contact condition, <em>Provisioning_Status__c</em> ← <code>{!$Flow.FaultMessage}</code>. Errors land on the record where admins see them — Module 2's try/catch, as a connector.</li>
+        <li><strong>Save</strong> as <code>Portal Provisioner Flow</code> → <strong>Activate</strong>. And <strong>deactivate Module 2's <code>ContactTrigger</code> first</strong> if it's still live (Setup → Apex Triggers → edit → uncheck <em>Is Active</em>) — two provisioners racing is a lesson for another day.</li>
       </ol>
-      <p><strong>The payoff:</strong> tick the checkbox on a Contact with an email → ~10 seconds → refresh: id and status filled, user visible in Auth0's dashboard. Same result as Module 2, different builder.</p>
+      <p><strong>The payoff:</strong> tick the checkbox on a Contact that has an Email → save (instant) → ~10 seconds → refresh: id and status filled, user visible in Auth0's dashboard. Same result as Module 2, different builder.</p>
     </div>
   </div>
 
@@ -2764,6 +2843,7 @@ Save this to the Account?</code></pre></li>
     <li><a href="https://help.salesforce.com/s/articleView?id=platform.flow_http_callout.htm&language=en_US&type=5">Salesforce: Connecting to an API Without a Connector Using HTTP Callout</a> · <a href="https://help.salesforce.com/s/articleView?id=platform.flow_http_callout_configure.htm&language=en_US&type=5">Configure an HTTP Callout Action</a> — guided setup, external/named credential requirement, GET/POST/PUT/PATCH/DELETE, sample-response → data structure, generated External Service + invocable action</li>
     <li><a href="https://help.salesforce.com/s/articleView?id=platform.flow_distribute_system_rest.htm&language=en_US&type=5">Salesforce: Start a Flow from REST API</a> · <a href="https://developer.salesforce.com/docs/atlas.en-us.api_action.meta/api_action/actions_obj_flow.htm">Actions Developer Guide: Flow Actions</a> — <code>/actions/custom/flow/</code> endpoint, <code>inputs</code> array, <code>outputValues</code> response, multiple invocations per call</li>
     <li><a href="https://help.salesforce.com/s/articleView?id=release-notes.rn_automate_flow_builder_outbound_message.htm&language=en_US&release=234&type=5">Salesforce release note: Send an Outbound Message from Your Record-Triggered Flow</a> — record ID passed implicitly</li>
+    <li><a href="https://help.salesforce.com/s/articleView?id=release-notes.rn_automate_flow_builder_asynchronous_path.htm&language=en_US&release=234&type=5">Salesforce: Connect a Record-Triggered Flow to an External System Using an Asynchronous Path</a> — the "Include a Run Asynchronously path" option, callouts after the transaction commits, monitoring via Time-Based Workflow</li>
     <li><a href="https://admin.salesforce.com/blog/2023/what-is-a-platform-event-triggered-flow">Salesforce Admins: What Is a Platform Event-Triggered Flow?</a> — publish/subscribe from Flow</li>
     <li><a href="https://developer.salesforce.com/docs/platform/named-credentials/guide/get-started.html">Named Credentials developer guide</a> — Custom authentication protocol (our no-auth pattern) · <a href="https://www.salesforceben.com/your-comprehensive-guide-to-http-callouts-in-salesforce-flow/">Salesforce Ben: Comprehensive Guide to HTTP Callouts in Flow</a> (community cross-check)</li>
     <li><a href="https://developers.amadeus.com/self-service/category/destination-experiences/api-doc/city-search/api-reference">Amadeus: City Search API reference</a> · <a href="https://github.com/amadeus4dev/amadeus-open-api-specification/blob/main/spec/json/CitySearch_v1_swagger_specification.json">official OpenAPI spec</a> — base URL <code>https://test.api.amadeus.com/v1</code>, <code>keyword</code> required (2–10 chars), response <code>data[]</code> with <code>name</code>/<code>iataCode</code>/<code>geoCode</code>, the <code>include=AIRPORTS</code> dynamic-keys behavior · <a href="https://developers.amadeus.com/self-service/apis-docs/guides/developer-guides/API-Keys/authorization/">Amadeus: API Keys &amp; Authorization</a> — client-credentials token endpoint, ~30-minute tokens</li>
