@@ -885,11 +885,91 @@
   <h1>Verify with Postman</h1>
   <p class="lead">Before you configure a single thing in Salesforce, you'll prove the whole flow by hand in <strong>Postman</strong> — a free desktop app for sending API requests. This is the first module that uses it, so the steps below are <em>every click</em>. Later modules reuse these same mechanics and point back here.</p>
 
-  <div class="callout concept"><span class="t">💡 The Postman screen in 30 seconds</span>
-    Four things you'll touch: (1) the <strong>Collections</strong> list on the left — your saved requests and their variables live here; (2) the <strong>request tab</strong> in the middle — a <em>method</em> dropdown (GET / POST / …) next to a <em>URL</em> box; (3) the row of sub-tabs under it — <strong>Params · Authorization · Headers · Body · Scripts</strong>; (4) the blue <strong>Send</strong> button on the right. That's the whole app for our purposes.</div>
+  <div class="callout action"><span class="t">✅ Before you start</span>
+    Finish the <strong>External Client App</strong> and <strong>Run As</strong> user from topics 2–3 first — that's where <code>consumer_key</code> and <code>consumer_secret</code> come from. Then run the four requests <strong>in order</strong>: Request 1 mints the access token that Requests 2–4 reuse. This flow has <em>no refresh token</em>, so when the token expires, just run Request 1 again.</div>
 
   <div class="step">
-    <div class="head">Step 1 · Import the collection and set your values</div>
+    <div class="head">Step 1 · Set up Postman (once)</div>
+    <div class="body">
+      <ol>
+        <li><strong>Install it.</strong> Download the free desktop app from <a href="https://www.postman.com/downloads/">postman.com/downloads</a>, then open it.</li>
+        <li><strong>Create a free account (or sign in) — don't skip this.</strong> On first launch Postman lets you create a free account, sign in, or continue with a signed-out <em>lightweight API Client</em>. That lightweight mode <em>can't use collections or variables</em>, and this entire lab is built on an imported collection with variables — so sign in. It's free, no credit card.</li>
+        <li><strong>You land in your workspace</strong> — Postman's working area. The <strong>Collections</strong> list and the <strong>Import</strong> button live in the <strong>left sidebar</strong>; that's where Step 2 begins.</li>
+      </ol>
+      <p style="font-size:13px;color:var(--muted)">Verified against Postman's official docs, July 2026. (Old tutorials mention a "Scratch Pad" for offline use — that was retired; it's the lightweight API Client now, which is why collections need an account.)</p>
+    </div>
+  </div>
+
+  <p>Every request you build uses the same handful of parts. Here's the whole app you'll touch — the numbered labels are explained inside the diagram:</p>
+  <div class="diagram"><svg viewBox="0 0 900 500" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Anatomy of a Postman request window: (1) the HTTP method dropdown, (2) the URL box, (3) the request tabs Params Authorization Headers Body Scripts Settings, (4) the Send button, and (5) the Collections and Variables sidebar.">
+    <style>
+      .pm-lbl{font-family:'Hanken Grotesk',system-ui,sans-serif;}
+      .pm-mono{font-family:'JetBrains Mono',ui-monospace,monospace;}
+    </style>
+    <!-- window frame -->
+    <rect x="10" y="12" width="880" height="298" rx="10" fill="#ffffff" stroke="#d5dbe4"/>
+    <!-- sidebar -->
+    <rect x="10" y="12" width="150" height="298" rx="10" fill="#f5f8fb"/>
+    <line x1="160" y1="12" x2="160" y2="310" stroke="#e7ebf1"/>
+    <text x="28" y="40" class="pm-lbl" font-size="13" font-weight="700" fill="#2b3f6b">Collections</text>
+    <rect x="18" y="52" width="134" height="26" rx="5" fill="#e9f2fd"/>
+    <text x="30" y="69" class="pm-lbl" font-size="11" fill="#0b6bcb">▸ Module 2 …</text>
+    <text x="28" y="104" class="pm-lbl" font-size="11" fill="#647184">⚙ Variables tab</text>
+    <!-- method dropdown -->
+    <rect x="176" y="30" width="96" height="34" rx="6" fill="#e6f4ec" stroke="#157a4c"/>
+    <text x="224" y="52" class="pm-lbl" font-size="14" font-weight="700" fill="#157a4c" text-anchor="middle">POST ▾</text>
+    <!-- url box -->
+    <rect x="284" y="30" width="428" height="34" rx="6" fill="#ffffff" stroke="#d5dbe4"/>
+    <text x="298" y="52" class="pm-mono" font-size="12" fill="#33404f"><tspan fill="#b4590b">{{my_domain}}</tspan>/services/oauth2/token</text>
+    <!-- send -->
+    <rect x="724" y="30" width="150" height="34" rx="6" fill="#0b6bcb"/>
+    <text x="799" y="52" class="pm-lbl" font-size="14" font-weight="700" fill="#ffffff" text-anchor="middle">Send</text>
+    <!-- tab row -->
+    <text x="180" y="98" class="pm-lbl" font-size="12" fill="#647184">Params</text>
+    <text x="244" y="98" class="pm-lbl" font-size="12" fill="#647184">Authorization</text>
+    <text x="356" y="98" class="pm-lbl" font-size="12" fill="#647184">Headers</text>
+    <text x="430" y="98" class="pm-lbl" font-size="12" font-weight="700" fill="#0b6bcb">Body</text>
+    <rect x="428" y="106" width="40" height="3" fill="#0b6bcb"/>
+    <text x="500" y="98" class="pm-lbl" font-size="12" fill="#647184">Scripts</text>
+    <text x="560" y="98" class="pm-lbl" font-size="12" fill="#647184">Settings</text>
+    <line x1="176" y1="114" x2="874" y2="114" stroke="#e7ebf1"/>
+    <!-- body type + grid -->
+    <text x="180" y="137" class="pm-lbl" font-size="11.5" font-weight="700" fill="#18212e">◉ x-www-form-urlencoded</text>
+    <text x="372" y="137" class="pm-lbl" font-size="11.5" fill="#a7b0bd">○ raw   ○ form-data   ○ none</text>
+    <rect x="176" y="150" width="698" height="120" rx="6" fill="#ffffff" stroke="#e7ebf1"/>
+    <line x1="176" y1="178" x2="874" y2="178" stroke="#e7ebf1"/>
+    <line x1="456" y1="150" x2="456" y2="270" stroke="#e7ebf1"/>
+    <text x="190" y="170" class="pm-lbl" font-size="11" font-weight="700" fill="#647184">KEY</text>
+    <text x="470" y="170" class="pm-lbl" font-size="11" font-weight="700" fill="#647184">VALUE</text>
+    <text x="190" y="201" class="pm-mono" font-size="11.5" fill="#18212e">grant_type</text>
+    <text x="470" y="201" class="pm-mono" font-size="11.5" fill="#18212e">client_credentials</text>
+    <text x="190" y="229" class="pm-mono" font-size="11.5" fill="#18212e">client_id</text>
+    <text x="470" y="229" class="pm-mono" font-size="11.5" fill="#b4590b">{{consumer_key}}</text>
+    <text x="190" y="257" class="pm-mono" font-size="11.5" fill="#18212e">client_secret</text>
+    <text x="470" y="257" class="pm-mono" font-size="11.5" fill="#b4590b">{{consumer_secret}}</text>
+    <!-- numbered markers -->
+    <g><circle cx="176" cy="30" r="11" fill="#b4590b"/><text x="176" y="34" class="pm-lbl" font-size="12" font-weight="700" fill="#fff" text-anchor="middle">1</text></g>
+    <g><circle cx="284" cy="30" r="11" fill="#b4590b"/><text x="284" y="34" class="pm-lbl" font-size="12" font-weight="700" fill="#fff" text-anchor="middle">2</text></g>
+    <g><circle cx="414" cy="92" r="11" fill="#b4590b"/><text x="414" y="96" class="pm-lbl" font-size="12" font-weight="700" fill="#fff" text-anchor="middle">3</text></g>
+    <g><circle cx="724" cy="30" r="11" fill="#b4590b"/><text x="724" y="34" class="pm-lbl" font-size="12" font-weight="700" fill="#fff" text-anchor="middle">4</text></g>
+    <g><circle cx="20" cy="65" r="11" fill="#b4590b"/><text x="20" y="69" class="pm-lbl" font-size="12" font-weight="700" fill="#fff" text-anchor="middle">5</text></g>
+    <!-- legend -->
+    <g class="pm-lbl" font-size="13" fill="#33404f">
+      <g><circle cx="24" cy="344" r="11" fill="#b4590b"/><text x="24" y="348" font-size="12" font-weight="700" fill="#fff" text-anchor="middle">1</text></g>
+      <text x="46" y="348">Choose the HTTP method — GET, POST, PATCH, DELETE.</text>
+      <g><circle cx="24" cy="378" r="11" fill="#b4590b"/><text x="24" y="382" font-size="12" font-weight="700" fill="#fff" text-anchor="middle">2</text></g>
+      <text x="46" y="382">Type the URL. Anything in {{double braces}} comes from your collection Variables.</text>
+      <g><circle cx="24" cy="412" r="11" fill="#b4590b"/><text x="24" y="416" font-size="12" font-weight="700" fill="#fff" text-anchor="middle">3</text></g>
+      <text x="46" y="416">Set the request in these tabs: Params · Authorization · Headers · Body · Scripts.</text>
+      <g><circle cx="24" cy="446" r="11" fill="#b4590b"/><text x="24" y="450" font-size="12" font-weight="700" fill="#fff" text-anchor="middle">4</text></g>
+      <text x="46" y="450">Click Send, then read the response (status code + body) below.</text>
+      <g><circle cx="24" cy="480" r="11" fill="#b4590b"/><text x="24" y="484" font-size="12" font-weight="700" fill="#fff" text-anchor="middle">5</text></g>
+      <text x="46" y="484">Your imported Collection and its Variables live in the left sidebar.</text>
+    </g>
+  </svg></div>
+
+  <div class="step">
+    <div class="head">Step 2 · Import the collection and set your values</div>
     <div class="body">
       <ol>
         <li>Download <code>resources/module-2-client-credentials/postman/Module2-Client-Credentials.postman_collection.json</code> from this repo to your computer.</li>
@@ -2543,6 +2623,9 @@ System.debug('Booked! ' + link);
   <span class="phase-tag p4">Module 5 · Flow Integrations</span>
   <h1>Verify with Postman</h1>
   <p class="lead">Import <code>resources/module-5-flow-integrations/postman/Module5-Flow-Integrations.postman_collection.json</code>. It reuses Module 2's variables (<code>my_domain</code>, <code>consumer_key</code>, <code>consumer_secret</code>) — same org, same External Client App, same token request. That's the point: <strong>the auth you built once now serves every module.</strong></p>
+
+  <div class="callout action"><span class="t">✅ Before you start</span>
+    Two prerequisites for this folder: the <strong>Lead_Intake_API</strong> flow (built in topic 2) must be <strong>Active</strong>, and the integration user's permission set needs <strong>Create</strong> on <strong>Lead</strong>. Then run Request 1 first — it mints the token Request 2 reuses.</div>
 
   <div class="callout concept"><span class="t">💡 Nothing new in the Postman UI</span>
     Import, the <strong>Variables</strong> tab, Bearer auth, and <strong>Send</strong> are identical to <a href="#p1-postman">Module 2 · Verify with Postman</a>. Request 1 below <em>is</em> Module 2's Request 1; Request 2 is Module 2's raw-JSON create with a different URL and body. If those clicks feel automatic now, that's the whole point of this module.</div>
