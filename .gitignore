@@ -1,2 +1,5 @@
 .DS_Store
 *.DS_Store
+
+# Standalone assessment / explainer drafts kept out of the published curriculum
+archive/
