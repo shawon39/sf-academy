@@ -992,6 +992,9 @@
     </div>
   </div>
 
+  <div class="callout concept"><span class="t">💡 The rhythm for all four requests</span>
+    The collection already contains Requests 1–4, fully built. For each one your whole job is the same: <strong>click it in the sidebar → press Send → check the result</strong>. The boxed "how it's built" steps below show how you'd recreate a request from scratch — worth reading once to learn Postman, but you don't have to build anything yourself.</div>
+
   <h2>Request 1 — Get an access token 🔑</h2>
   <p>Open the <strong>Inbound — Salesforce</strong> folder and click <strong>1. Get Access Token</strong>. It's already built to look like this:</p>
   <pre><code>POST {{my_domain}}/services/oauth2/token
@@ -1001,7 +1004,7 @@ Content-Type: application/x-www-form-urlencoded
 <span class="k">client_id</span>=<span class="v">{{consumer_key}}</span>
 <span class="k">client_secret</span>=<span class="v">{{consumer_secret}}</span></code></pre>
   <div class="step">
-    <div class="head">How that request is built — do this any time you make one from scratch</div>
+    <div class="head">Optional — how that request is built, so you can make your own from scratch</div>
     <div class="body">
       <ol>
         <li><strong>New request:</strong> click <strong>New</strong> (or the <strong>+</strong> new-tab button) → <strong>HTTP</strong>. A blank request opens, defaulting to <strong>GET</strong>.</li>
