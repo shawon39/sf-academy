@@ -1064,7 +1064,7 @@ Content-Type: application/x-www-form-urlencoded
   <div class="step">
     <div class="head">A3 — Get a token in Postman (one new twist: <code>audience</code>)</div>
     <div class="body">
-      <p>Import the collection, set <code>auth0_domain</code>, <code>auth0_client_id</code>, <code>auth0_client_secret</code>, and run <strong>Project — Auth0 CRUD → 1. Get Token</strong>:</p>
+      <p>Import the collection, set <code>auth0_domain</code>, <code>auth0_client_id</code>, <code>auth0_client_secret</code> in the <strong>Variables</strong> tab, and run <strong>Project — Auth0 CRUD → 1. Get Token</strong>. It's the <a href="#p1-postman">Module 2, Request 1</a> build — a <strong>POST</strong> with a <strong>Body → x-www-form-urlencoded</strong> grid — plus one extra row (<code>audience</code>):</p>
       <pre><code>POST https://{{auth0_domain}}/oauth/token
 Content-Type: application/x-www-form-urlencoded
 
@@ -1081,6 +1081,8 @@ Content-Type: application/x-www-form-urlencoded
   <div class="step">
     <div class="head">A4 — The four verbs: full CRUD in Postman</div>
     <div class="body">
+      <div class="callout concept"><span class="t">💡 Same clicks as Module 2's CRUD</span>
+        Each verb: pick <strong>POST / GET / PATCH / DELETE</strong> from the method dropdown, set <strong>Authorization → Bearer Token</strong> → <code>{{auth0_access_token}}</code> (or the header shown), and for <strong>Create</strong> and <strong>Update</strong> add a <strong>Body → raw → JSON</strong> object. Create auto-saves the returned <code>user_id</code> into <code>auth0_user_id</code> (its <strong>Scripts › Post-response</strong> tab), so Read / Update / Delete reuse it.</div>
       <p><strong>C — Create</strong> (expect <span class="status-good">201</span>; the collection saves the returned <code>user_id</code>, which looks like <code>auth0|68a1…</code>):</p>
       <pre><code>POST https://{{auth0_domain}}/api/v2/users
 <span class="k">Authorization:</span> <span class="v">Bearer {{auth0_access_token}}</span>
@@ -1663,7 +1665,7 @@ Content-Type: application/x-www-form-urlencoded
   <div class="step blue">
     <div class="head">A2 — Log in through Postman's helper (spot the two Dropbox twists)</div>
     <div class="body">
-      <p>Same OAuth 2.0 helper as the inbound lab — compare field by field:</p>
+      <p>Same OAuth 2.0 helper as <a href="#p2-postman">Lab 1's guided login</a> — identical clicks (collection → <strong>Authorization</strong> tab → Auth Type <strong>OAuth 2.0</strong> → <strong>Configure New Token</strong> → <strong>Get New Access Token</strong> → <strong>Use Token</strong>); only these fields differ. Compare field by field:</p>
       <table>
         <thead><tr><th>Field</th><th>Value</th></tr></thead>
         <tbody>
@@ -1685,6 +1687,8 @@ Content-Type: application/x-www-form-urlencoded
   <div class="step blue">
     <div class="head">A3 — Prove the API surface (4 requests, all in the collection)</div>
     <div class="body">
+      <div class="callout concept"><span class="t">💡 How to build each one (same base as Module 2)</span>
+        All four are <strong>POST</strong> with <strong>Authorization → Bearer Token</strong> → <code>{{dropbox_access_token}}</code>. Bodies differ: request <strong>1</strong> has <strong>Body → none</strong>; requests <strong>2</strong> and <strong>4</strong> are <strong>Body → raw → JSON</strong>. Request <strong>3</strong> (upload) is the exception, and the one genuinely new mechanic: its parameters go in the <strong>Headers</strong> tab (<code>Dropbox-API-Arg</code> + <code>Content-Type: application/octet-stream</code>) and its <strong>Body → raw → Text</strong> carries the file's bytes — <em>not</em> JSON.</div>
       <p><strong>1. Who am I?</strong> (Dropbox's RPC endpoints are POST-based):</p>
       <pre><code>POST https://api.dropboxapi.com/2/users/get_current_account
 <span class="k">Authorization:</span> <span class="v">Bearer {{dropbox_access_token}}</span></code></pre>
@@ -2631,7 +2635,7 @@ System.debug('Booked! ' + link);
   <div class="step purple">
     <div class="head">A2 — Prove it in Postman (token → city search → save the JSON)</div>
     <div class="body">
-      <p><strong>Request 1 — the token</strong> (compare with Module 2's line by line — only the company changed):</p>
+      <p><strong>Request 1 — the token.</strong> Build it like <a href="#p1-postman">Module 2, Request 1</a> — <strong>POST</strong>, <strong>Body → x-www-form-urlencoded</strong>, three rows — with <code>amadeus_client_id</code> / <code>amadeus_client_secret</code> set in the <strong>Variables</strong> tab. The credentials ride in the <em>body</em> (note that for A3's "credentials in request body" toggle). Compare with Module 2 line by line — only the company changed:</p>
       <pre><code>POST https://test.api.amadeus.com/v1/security/oauth2/token
 Content-Type: application/x-www-form-urlencoded
 
@@ -2639,7 +2643,7 @@ Content-Type: application/x-www-form-urlencoded
 <span class="k">client_id</span>=<span class="v">{{amadeus_client_id}}</span>
 <span class="k">client_secret</span>=<span class="v">{{amadeus_client_secret}}</span></code></pre>
       <p>Response: an <code>access_token</code> with <code>expires_in</code> around <code>1799</code> — Amadeus tokens live ~30 minutes. (No refresh token, as you'd predict for this flow — re-request when it dies. In Salesforce, the Named Credential engine will do that for you.)</p>
-      <p><strong>Request 2 — City Search</strong> (the API our flow will call):</p>
+      <p><strong>Request 2 — City Search</strong> (the API our flow will call) — a <strong>GET</strong> with <strong>Authorization → Bearer</strong> <code>{{amadeus_access_token}}</code>; the <code>keyword</code> and <code>max</code> query params show as editable rows in the <strong>Params</strong> tab:</p>
       <pre><code>GET https://test.api.amadeus.com/v1/reference-data/locations/cities?keyword=PARIS&amp;max=3
 <span class="k">Authorization:</span> <span class="v">Bearer {{amadeus_access_token}}</span></code></pre>
       <p>The response is an <strong>array</strong> — richer than anything the earlier modules parsed:</p>
@@ -2652,7 +2656,7 @@ Content-Type: application/x-www-form-urlencoded
     }
   ], <span class="cm">…more matches…</span>
 }</code></pre>
-      <p><strong>Save your real response JSON</strong> — Session B pastes it into Flow Builder as the sample, and the keys (<code>data</code>, <code>name</code>, <code>iataCode</code>, <code>geoCode.latitude</code>) become your typed Flow variables. Clean camelCase keys: Flow-safe.</p>
+      <p><strong>Save your real response JSON.</strong> In Postman's response pane, click the <strong>Copy</strong> icon at the top-right of the body — or use <strong>Save Response → Save to a file</strong> — and keep it. Session B pastes it into Flow Builder's <em>"Provide Sample Response"</em> step, and the keys (<code>data</code>, <code>name</code>, <code>iataCode</code>, <code>geoCode.latitude</code>) become your typed Flow variables. Clean camelCase keys: Flow-safe.</p>
       <div class="callout caution"><span class="t">⚠️ Leave <code>include=AIRPORTS</code> out — on purpose</span>
         City Search has an optional <code>include=AIRPORTS</code> parameter that returns airports keyed <em>by their codes</em> — <code>"CDG": {…}, "ORY": {…}</code>. Those are <strong>dynamic JSON keys</strong>: a sample from Paris builds a structure that Madrid's response won't match. It's the exact trap from the troubleshooting table, sitting in a real API — the homework sends you to meet it deliberately.</div>
     </div>
