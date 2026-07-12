@@ -883,15 +883,64 @@
 <section class="topic" id="p1-postman">
   <span class="phase-tag p1">Module 2 · Client Credentials</span>
   <h1>Verify with Postman</h1>
-  <p class="lead">Import <code>resources/module-2-client-credentials/postman/Module2-Client-Credentials.postman_collection.json</code> (Postman → Import → drop the file). Set the collection variables <code>my_domain</code>, <code>consumer_key</code>, <code>consumer_secret</code>. Then run the <strong>Inbound — Salesforce</strong> folder top to bottom.</p>
+  <p class="lead">Before you configure a single thing in Salesforce, you'll prove the whole flow by hand in <strong>Postman</strong> — a free desktop app for sending API requests. This is the first module that uses it, so the steps below are <em>every click</em>. Later modules reuse these same mechanics and point back here.</p>
+
+  <div class="callout concept"><span class="t">💡 The Postman screen in 30 seconds</span>
+    Four things you'll touch: (1) the <strong>Collections</strong> list on the left — your saved requests and their variables live here; (2) the <strong>request tab</strong> in the middle — a <em>method</em> dropdown (GET / POST / …) next to a <em>URL</em> box; (3) the row of sub-tabs under it — <strong>Params · Authorization · Headers · Body · Scripts</strong>; (4) the blue <strong>Send</strong> button on the right. That's the whole app for our purposes.</div>
+
+  <div class="step">
+    <div class="head">Step 1 · Import the collection and set your values</div>
+    <div class="body">
+      <ol>
+        <li>Download <code>resources/module-2-client-credentials/postman/Module2-Client-Credentials.postman_collection.json</code> from this repo to your computer.</li>
+        <li>In Postman, click <strong>Import</strong> (top of the left sidebar) → drag the <code>.json</code> file into the window, or click <strong>Choose files</strong> and pick it. Postman recognizes the format and adds a collection named <em>Module 2 — Client Credentials (Salesforce + Auth0)</em> to the sidebar.</li>
+        <li>Click the collection name once, then open its <strong>Variables</strong> tab. Fill in the <strong>Value</strong> column for these three (leave the rest as-is):</li>
+      </ol>
+      <table>
+        <thead><tr><th style="width:32%">Variable</th><th>What to paste</th></tr></thead>
+        <tbody>
+          <tr><td><code>my_domain</code></td><td>Your org's My Domain URL, e.g. <code>https://yourcompany.my.salesforce.com</code> — <strong>not</strong> <code>login.salesforce.com</code>.</td></tr>
+          <tr><td><code>consumer_key</code></td><td>From the External Client App → <em>Settings → OAuth Settings → Consumer Key</em>.</td></tr>
+          <tr><td><code>consumer_secret</code></td><td>The matching <em>Consumer Secret</em> on that same screen.</td></tr>
+        </tbody>
+      </table>
+      <ol start="4">
+        <li>Press <strong>⌘S / Ctrl-S</strong> to save the Variables tab. Every request in the collection already reads these through <code>{{my_domain}}</code>-style placeholders, so you set them once, here.</li>
+      </ol>
+      <div class="callout caution"><span class="t">⚠️ "Initial value" vs "Current value"</span>
+        Newer Postman shows a single <strong>Value</strong> column. If your version (or the VS Code extension) shows <em>two</em> — <strong>Initial value</strong> and <strong>Current value</strong> — put your secrets in <strong>Current value</strong>: that's the copy used when you click Send, and it stays on your machine instead of syncing to the Postman cloud.</div>
+    </div>
+  </div>
 
   <h2>Request 1 — Get an access token 🔑</h2>
+  <p>Open the <strong>Inbound — Salesforce</strong> folder and click <strong>1. Get Access Token</strong>. It's already built to look like this:</p>
   <pre><code>POST {{my_domain}}/services/oauth2/token
 Content-Type: application/x-www-form-urlencoded
 
 <span class="k">grant_type</span>=<span class="v">client_credentials</span>
 <span class="k">client_id</span>=<span class="v">{{consumer_key}}</span>
 <span class="k">client_secret</span>=<span class="v">{{consumer_secret}}</span></code></pre>
+  <div class="step">
+    <div class="head">How that request is built — do this any time you make one from scratch</div>
+    <div class="body">
+      <ol>
+        <li><strong>New request:</strong> click <strong>New</strong> (or the <strong>+</strong> new-tab button) → <strong>HTTP</strong>. A blank request opens, defaulting to <strong>GET</strong>.</li>
+        <li><strong>Method:</strong> click the method dropdown (it reads <code>GET</code>) → choose <strong>POST</strong>.</li>
+        <li><strong>URL:</strong> in the box to its right, type <code>{{my_domain}}/services/oauth2/token</code>. As you type <code>{{</code>, Postman autocompletes your collection variables; a recognized one turns orange.</li>
+        <li><strong>Body:</strong> click the <strong>Body</strong> sub-tab → select the <strong>x-www-form-urlencoded</strong> radio button. A key/value grid appears — add three rows (keep each row's checkbox ticked):
+          <table>
+            <thead><tr><th>KEY</th><th>VALUE</th></tr></thead>
+            <tbody>
+              <tr><td><code>grant_type</code></td><td><code>client_credentials</code></td></tr>
+              <tr><td><code>client_id</code></td><td><code>{{consumer_key}}</code></td></tr>
+              <tr><td><code>client_secret</code></td><td><code>{{consumer_secret}}</code></td></tr>
+            </tbody>
+          </table>
+          Postman URL-encodes these and sets the <code>Content-Type: application/x-www-form-urlencoded</code> header for you — you never add that header by hand.</li>
+        <li><strong>Save</strong> (⌘S / Ctrl-S) into the collection so it's there next time, then click the blue <strong>Send</strong>.</li>
+      </ol>
+    </div>
+  </div>
   <div class="callout caution"><span class="t">⚠️ My Domain only</span> This flow requires your My Domain URL — <code>login.salesforce.com</code> will not work for the token request.</div>
   <p>Successful response (the collection auto-saves the token):</p>
   <pre><code>{
@@ -901,16 +950,20 @@ Content-Type: application/x-www-form-urlencoded
   <span class="k">"scope"</span>: <span class="v">"api"</span>
 }</code></pre>
   <p>Notice what's <em>missing</em>: no refresh token — by design.</p>
+  <div class="callout concept"><span class="t">💡 How the token saved itself</span>
+    Click the <strong>Scripts</strong> sub-tab → <strong>Post-response</strong> (older Postman labels this whole tab <strong>Tests</strong>). This request carries a few lines that run <em>after</em> the response arrives: <code>pm.collectionVariables.set('access_token', pm.response.json().access_token)</code>. That copies the token into the <code>access_token</code> variable so Requests 2–4 can send <code>Bearer {{access_token}}</code> without you pasting anything. Open the <strong>Console</strong> (bottom-left) to see its "Salesforce access token saved." log.</div>
 
   <h2>Request 2 — Smoke test: list API versions 🔎</h2>
   <pre><code>GET {{my_domain}}/services/data/
 <span class="k">Authorization:</span> <span class="v">Bearer {{access_token}}</span></code></pre>
-  <p>If this returns 200, your token works. Update the <code>api_version</code> variable to the newest version listed.</p>
+  <div class="callout concept"><span class="t">💡 Where the Bearer token is attached</span>
+    Open <strong>2. Smoke Test</strong> → the <strong>Headers</strong> sub-tab. One row does the work: <code>Authorization</code> = <code>Bearer {{access_token}}</code> — the "key card" minted by Request 1. (The tidier alternative every later module uses: the <strong>Authorization</strong> sub-tab → <strong>Auth Type</strong> = <strong>Bearer Token</strong> → paste <code>{{access_token}}</code> into the <strong>Token</strong> field. Same result — Postman just writes the header for you.)</div>
+  <p>Click <strong>Send</strong>. If this returns <span class="status-good">200</span>, your token works. Update the <code>api_version</code> variable to the newest version listed.</p>
 
   <h2>Request 3 — SOQL over HTTP 📋</h2>
   <pre><code>GET {{my_domain}}/services/data/v{{api_version}}/query?q=SELECT Id, Name FROM Account LIMIT 5
 <span class="k">Authorization:</span> <span class="v">Bearer {{access_token}}</span></code></pre>
-  <p>You only see records the <strong>Run As user</strong> can see — permissions enforced live.</p>
+  <p>The query rides in the URL after <code>?q=</code>. In Postman the <strong>Params</strong> sub-tab shows that same query string as an editable <em>Query Params</em> row (<code>q</code> = <code>SELECT Id, Name FROM Account LIMIT 5</code>) — edit it in either place and the other updates. You only see records the <strong>Run As user</strong> can see — permissions enforced live.</p>
 
   <h2>Request 4 — Create a record ✍️</h2>
   <pre><code>POST {{my_domain}}/services/data/v{{api_version}}/sobjects/Account
@@ -918,6 +971,16 @@ Content-Type: application/x-www-form-urlencoded
 <span class="k">Content-Type:</span> <span class="v">application/json</span>
 
 { <span class="k">"Name"</span>: <span class="v">"Module 2 Integration Test"</span>, <span class="k">"Industry"</span>: <span class="v">"Technology"</span> }</code></pre>
+  <div class="step">
+    <div class="head">The one new mechanic: a raw JSON body</div>
+    <div class="body">
+      <ol>
+        <li>Method dropdown → <strong>POST</strong>; URL as shown above.</li>
+        <li><strong>Body</strong> sub-tab → select the <strong>raw</strong> radio button. A format dropdown appears on the right showing <strong>Text</strong> — change it to <strong>JSON</strong>. That's what makes Postman send the <code>Content-Type: application/json</code> header.</li>
+        <li>Paste the JSON object into the text area, then <strong>Send</strong>.</li>
+      </ol>
+    </div>
+  </div>
   <p>Expect <span class="status-good">201 Created</span>. Open the record: <strong>Created By = your integration user</strong> — the Step 1 payoff.</p>
 
   <h2>Break it on purpose 🧪 (best learning of the day)</h2>
@@ -1470,26 +1533,42 @@ System.debug('Deleted. Try getUser again → expect our Auth0Exception with a 40
   <h1>Verify with Postman — Log In Through OAuth</h1>
   <p class="lead">Postman's OAuth helper plays the "web app": it generates the PKCE pair, opens the real browser, catches the callback, and exchanges the code — while showing you every artifact. Import <code>resources/module-3-web-server-pkce/postman/Module3-Web-Server-PKCE.postman_collection.json</code> and set <code>my_domain</code>, <code>consumer_key</code>, <code>consumer_secret</code>.</p>
 
+  <div class="callout concept"><span class="t">💡 Same mechanics as Module 2 — one new skill</span>
+    Importing the collection, filling the <strong>Variables</strong> tab, and clicking <strong>Send</strong> work exactly as in <a href="#p1-postman">Module 2 · Verify with Postman</a>. The only new thing here is letting Postman's <strong>OAuth 2.0</strong> helper perform the browser login for you — that's Lab 1 below, click by click.</div>
+
   <h2>Lab 1 — The guided login 🔑</h2>
-  <ol>
-    <li>Collection → <strong>Authorization</strong> tab → Auth Type <strong>OAuth 2.0</strong>. Under <em>Configure New Token</em>:</li>
-  </ol>
-  <table>
-    <thead><tr><th>Field</th><th>Value</th></tr></thead>
-    <tbody>
-      <tr><td>Grant type</td><td><code>Authorization Code (With PKCE)</code></td></tr>
-      <tr><td>Callback URL</td><td><code>https://oauth.pstmn.io/v1/callback</code></td></tr>
-      <tr><td>Auth URL</td><td><code>{{my_domain}}/services/oauth2/authorize</code></td></tr>
-      <tr><td>Access Token URL</td><td><code>{{my_domain}}/services/oauth2/token</code></td></tr>
-      <tr><td>Client ID / Secret</td><td>your consumer key + secret</td></tr>
-      <tr><td>Code Challenge Method</td><td><code>SHA-256</code></td></tr>
-      <tr><td>Scope</td><td><code>api refresh_token</code></td></tr>
-    </tbody>
-  </table>
-  <ol start="2">
-    <li>Click <strong>Get New Access Token</strong> → a browser opens (<em>that's the authorize endpoint</em>) → log in as yourself → read the consent screen (your scopes, in human words) → <strong>Allow</strong>.</li>
-    <li>Postman shows the result: <strong>access token AND refresh token</strong>. Copy them into the collection variables <code>access_token</code> and <code>refresh_token</code>.</li>
-  </ol>
+  <div class="step">
+    <div class="head">Lab 1 · Configure the OAuth 2.0 helper, then let it log you in</div>
+    <div class="body">
+      <ol>
+        <li>Click the collection <strong>Module 3 — Web Server + PKCE</strong> in the sidebar (the collection itself, not a request) → open its <strong>Authorization</strong> tab. Setting auth here means every request in the collection can inherit it.</li>
+        <li><strong>Auth Type</strong> dropdown → <strong>OAuth 2.0</strong>.</li>
+        <li>Scroll down to <strong>Configure New Token</strong> and fill in the fields:</li>
+      </ol>
+      <table>
+        <thead><tr><th style="width:34%">Field</th><th>Value</th></tr></thead>
+        <tbody>
+          <tr><td>Token Name</td><td>anything memorable, e.g. <code>SF as me</code></td></tr>
+          <tr><td>Grant Type</td><td>select <code>Authorization Code (With PKCE)</code> from the dropdown</td></tr>
+          <tr><td>Callback URL</td><td><code>https://oauth.pstmn.io/v1/callback</code></td></tr>
+          <tr><td>Auth URL</td><td><code>{{my_domain}}/services/oauth2/authorize</code></td></tr>
+          <tr><td>Access Token URL</td><td><code>{{my_domain}}/services/oauth2/token</code></td></tr>
+          <tr><td>Client ID</td><td><code>{{consumer_key}}</code></td></tr>
+          <tr><td>Client Secret</td><td><code>{{consumer_secret}}</code></td></tr>
+          <tr><td>Code Challenge Method</td><td>select <code>SHA-256</code></td></tr>
+          <tr><td>Scope</td><td><code>api refresh_token</code></td></tr>
+          <tr><td>Client Authentication</td><td>leave the default (<em>Send as Basic Auth header</em>) — Salesforce accepts either</td></tr>
+        </tbody>
+      </table>
+      <ol start="4">
+        <li>Click <strong>Get New Access Token</strong> → a browser window opens (<em>that's the authorize endpoint</em>) → log in as yourself → read the consent screen (your scopes, in plain words) → <strong>Allow</strong>.</li>
+        <li>Postman opens a <strong>Manage Access Tokens</strong> dialog showing an <strong>Access Token</strong> and a <strong>Refresh Token</strong>. Click <strong>Use Token</strong>.</li>
+        <li>This collection's Labs 2–4 read <code>{{access_token}}</code> in their header, so copy the two values across: open the collection <strong>Variables</strong> tab and paste the Access Token into <code>access_token</code> and the Refresh Token into <code>refresh_token</code>, then <strong>Save</strong>.</li>
+      </ol>
+      <div class="callout caution"><span class="t">⚠️ The callback URL must match on both sides</span>
+        <code>https://oauth.pstmn.io/v1/callback</code> must appear <em>verbatim</em> on your External Client App's <strong>Callback URL</strong> list, or Salesforce rejects the login. If you instead tick <strong>Authorize using browser</strong>, Postman switches its callback to <code>https://oauth.pstmn.io/v1/browser-callback</code> — then add <em>that</em> value to the allowlist.</div>
+    </div>
+  </div>
   <div class="callout action"><span class="t">✅ Slow down here — this is the whole lesson</span>
     In the browser's URL bar, find the diagram's first arrow: <code>response_type=code</code>, your <code>client_id</code>, the <code>redirect_uri</code>, the <code>code_challenge</code>. And notice: <strong>Postman never saw your password.</strong></div>
 
@@ -1512,6 +1591,8 @@ Content-Type: application/x-www-form-urlencoded
 <span class="k">client_id</span>=<span class="v">{{consumer_key}}</span>
 <span class="k">client_secret</span>=<span class="v">{{consumer_secret}}</span></code></pre>
   <p>A fresh <code>access_token</code>, no browser, no login — this is how every mobile app you own stays signed in for months. (A new <em>refresh</em> token appears only if Rotation is enabled.)</p>
+  <div class="callout concept"><span class="t">💡 Built exactly like Module 2's token request</span>
+    This is a plain <strong>POST</strong> with a <strong>Body → x-www-form-urlencoded</strong> grid of four rows — the same mechanic from <a href="#p1-postman">Module 2, Request 1</a>, just with <code>grant_type=refresh_token</code>. Its <strong>Scripts › Post-response</strong> tab re-saves the new <code>access_token</code> (and the refresh token, if one is returned) for you.</div>
 
   <h2>Break it on purpose 🧪</h2>
   <ul>
@@ -2069,7 +2150,16 @@ jwt.setAdditionalClaims(new Map&lt;String, Object&gt;{
 Auth.JWS jws = new Auth.JWS(jwt, <span class="v">'GoogleSA'</span>);   <span class="cm">// signed inside Salesforce</span>
 System.debug('TOKEN: ' + new Auth.JWTBearerTokenExchange(
     <span class="v">'https://oauth2.googleapis.com/token'</span>, jws).getAccessToken());</code></pre>
-      <p>Copy the debugged token into the collection variable <code>google_access_token</code> (it lives ~1 hour — mint again when it dies; that IS the flow). Then run the <strong>Project — Google Calendar CRUD</strong> folder with your <code>calendar_id</code> set:</p>
+      <p>Now hand that token to Postman. Import <code>resources/module-4-jwt-bearer/postman/Module4-Google-Calendar-CRUD.postman_collection.json</code> exactly as in <a href="#p1-postman">Module 2</a>, then open the collection's <strong>Variables</strong> tab and fill two <strong>Value</strong> cells:</p>
+      <table>
+        <thead><tr><th style="width:38%">Variable</th><th>What to paste</th></tr></thead>
+        <tbody>
+          <tr><td><code>google_access_token</code></td><td>the <code>TOKEN:</code> value from the Apex debug log (it lives ~1 hour — mint again when it dies; that IS the flow)</td></tr>
+          <tr><td><code>calendar_id</code></td><td>your Gmail address for the primary calendar, or the <code>…@group.calendar.google.com</code> id from A3</td></tr>
+        </tbody>
+      </table>
+      <div class="callout concept"><span class="t">💡 The four requests are built like Module 2 — with two new methods</span>
+        Each CRUD request is the same recipe you already know: method dropdown, URL with <code>{{calendar_id}}</code>/<code>{{event_id}}</code>, <strong>Authorization: Bearer {{google_access_token}}</strong> in the Headers, and (for Create/Update) a <strong>Body → raw → JSON</strong> object. The only new mechanic is picking <strong>PATCH</strong> and <strong>DELETE</strong> from that same method dropdown. Run them in order — request 1 (Create) auto-saves the returned <code>id</code> into <code>event_id</code> via its <strong>Scripts › Post-response</strong> tab, so 2–4 target the same event.</div>
       <p><strong>C — Create</strong> (expect <span class="status-good">200</span> with the event's <code>id</code> — auto-saved):</p>
       <pre><code>POST https://www.googleapis.com/calendar/v3/calendars/{{calendar_id}}/events
 <span class="k">Authorization:</span> <span class="v">Bearer {{google_access_token}}</span>
@@ -2450,10 +2540,14 @@ System.debug('Booked! ' + link);
   <h1>Verify with Postman</h1>
   <p class="lead">Import <code>resources/module-5-flow-integrations/postman/Module5-Flow-Integrations.postman_collection.json</code>. It reuses Module 2's variables (<code>my_domain</code>, <code>consumer_key</code>, <code>consumer_secret</code>) — same org, same External Client App, same token request. That's the point: <strong>the auth you built once now serves every module.</strong></p>
 
+  <div class="callout concept"><span class="t">💡 Nothing new in the Postman UI</span>
+    Import, the <strong>Variables</strong> tab, Bearer auth, and <strong>Send</strong> are identical to <a href="#p1-postman">Module 2 · Verify with Postman</a>. Request 1 below <em>is</em> Module 2's Request 1; Request 2 is Module 2's raw-JSON create with a different URL and body. If those clicks feel automatic now, that's the whole point of this module.</div>
+
   <h2>Request 1 — Get a token 🔑 (Module 2's, verbatim)</h2>
   <p>Run <em>1. Get Access Token</em> — the identical client-credentials POST from Module 2. Nothing new to learn; feel how routine it's become.</p>
 
   <h2>Request 2 — Call your flow 📞</h2>
+  <p>Built exactly like <a href="#p1-postman">Module 2's record-create</a>: method <strong>POST</strong>, <strong>Authorization: Bearer {{access_token}}</strong> in the Headers, and <strong>Body → raw → JSON</strong> — only the URL and the payload differ.</p>
   <pre><code>POST {{my_domain}}/services/data/v{{api_version}}/actions/custom/flow/Lead_Intake_API
 <span class="k">Authorization:</span> <span class="v">Bearer {{access_token}}</span>
 <span class="k">Content-Type:</span> <span class="v">application/json</span>
