@@ -1222,10 +1222,12 @@ Content-Type: application/x-www-form-urlencoded
       <p>The standard External Credential can't add Auth0's extra <code>audience</code> parameter by itself — that's what this Setup record is for: it describes an outside authorization server <em>including custom token-request parameters</em>.</p>
       <ol>
         <li>Setup → Quick Find: <code>External Auth Identity Providers</code> → New.</li>
-        <li><strong>Name:</strong> <code>Auth0_Identity</code>. <strong>Token endpoint URL:</strong> <code>https://YOUR-TENANT.us.auth0.com/oauth/token</code>.</li>
-        <li>Add a <strong>Custom Request Parameter</strong>: Name <code>audience</code>, Value <code>https://YOUR-TENANT.us.auth0.com/api/v2/</code>, included as a <strong>Body Parameter</strong>. Save.</li>
+        <li><strong>Label:</strong> <code>Auth0_Identity</code>. Set <strong>Authentication Protocol</strong> = <strong>OAuth 2.0</strong> and <strong>Authentication Flow</strong> = <strong>Client Credentials</strong>, pointed at Auth0's <strong>token endpoint</strong> <code>https://YOUR-TENANT.us.auth0.com/oauth/token</code>.</li>
+        <li>Add a <strong>Custom Request Parameter</strong> — <strong>Parameter Type: Token Request Body Parameter</strong>, Name <code>audience</code>, Value <code>https://YOUR-TENANT.us.auth0.com/api/v2/</code>. Save.</li>
       </ol>
-      <div class="callout caution"><span class="t">⚠️ Label drift</span> Exact field labels shift slightly between releases. Match by role: (1) token endpoint, (2) a custom parameter named <code>audience</code> sent in the body. The trailing slash in the audience value matters — copy it exactly.</div>
+      <div class="callout concept"><span class="t">💡 Two kinds of "custom" — don't mix them up</span>
+        A <strong>Custom Request Parameter</strong> (the one you just added) rides on the <em>token request</em> — that's where <code>audience</code> belongs, because it's part of <em>getting</em> the token. <strong>Custom Headers</strong>, which you'd set on the External or Named Credential instead, ride on the actual <em>API callout</em> (like Module 3's Dropbox header). Put <code>audience</code> in a header and it would never reach Auth0's token endpoint.</div>
+      <div class="callout caution"><span class="t">⚠️ Label drift</span> Exact field labels shift slightly between releases. Match by role: (1) the token endpoint, (2) a parameter named <code>audience</code> sent as a <strong>token-request body</strong> parameter (not a header). The trailing slash in the audience value matters — copy it exactly.</div>
     </div>
   </div>
 
@@ -1472,7 +1474,7 @@ System.debug('Deleted. Try getUser again → expect our Auth0Exception with a 40
   <table>
     <thead><tr><th style="width:36%">Symptom</th><th>Cause → fix</th></tr></thead>
     <tbody>
-      <tr><td>Token request rejected, or Management API answers <code>401</code> to a fresh token</td><td>The <code>audience</code> parameter is missing or wrong. Postman: add it to the token body. Salesforce: check the Custom Request Parameter on the External Auth Identity Provider — exact value <code>https://YOUR-TENANT.us.auth0.com/api/v2/</code> <em>including the trailing slash</em>, sent as a Body Parameter.</td></tr>
+      <tr><td>Token request rejected, or Management API answers <code>401</code> to a fresh token</td><td>The <code>audience</code> parameter is missing or wrong. Postman: add it to the token body. Salesforce: check the Custom Request Parameter on the External Auth Identity Provider — exact value <code>https://YOUR-TENANT.us.auth0.com/api/v2/</code> <em>including the trailing slash</em>, Parameter Type <strong>Token Request Body Parameter</strong>.</td></tr>
       <tr><td><code>403 Insufficient scope</code></td><td>The M2M app wasn't granted that verb's scope. Auth0 → Applications → your app → APIs tab → tick <code>create:users read:users update:users delete:users</code>.</td></tr>
       <tr><td><code>400 connection does not exist</code> on create</td><td>The <code>connection</code> value must exactly match Auth0's database name — default is <code>Username-Password-Authentication</code> (Dashboard → Authentication → Database).</td></tr>
       <tr><td><code>400 PasswordStrengthError</code></td><td>Password too weak for the connection's policy. Use a long mixed-character password.</td></tr>
