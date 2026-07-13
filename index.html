@@ -1236,7 +1236,7 @@ Content-Type: application/x-www-form-urlencoded
     <div class="body">
       <ol>
         <li>Setup → Named Credentials → <strong>External Credentials</strong> tab → New.</li>
-        <li><strong>Label/Name:</strong> <code>Auth0</code>. <strong>Authentication Protocol:</strong> OAuth 2.0. <strong>Authentication Flow Type:</strong> <code>Client Credentials with Client Secret</code>, referencing the <code>Auth0_Identity</code> provider from B1.</li>
+        <li><strong>Label/Name:</strong> <code>Auth0</code>. <strong>Authentication Protocol:</strong> OAuth 2.0. <strong>Authentication Flow Type:</strong> the client-credentials flow that <em>references your <code>Auth0_Identity</code> External Auth Identity Provider</em> from B1 — depending on release this option reads <code>Client Credentials with Client Secret</code> or <code>Client Credentials and External Identity Provider</code>. That reference is what carries the <code>audience</code> parameter into the token request.</li>
         <li>In <strong>Principals</strong> → New: name <code>ProvisionerApp</code>, paste the Auth0 <strong>Client ID</strong> and <strong>Client Secret</strong> from Session A. Salesforce encrypts them — after saving, nobody can read the secret back. 🔒</li>
         <li>Grant access: your permission set (e.g. <em>Auth0 Integration Access</em>) → <strong>External Credential Principal Access</strong> → add <code>Auth0 – ProvisionerApp</code> → assign the permission set to yourself (you'll run the Apex).</li>
       </ol>
@@ -1499,7 +1499,7 @@ System.debug('Deleted. Try getUser again → expect our Auth0Exception with a 40
   <h2>Setup checklists</h2>
   <ul>
     <li><strong>Inbound:</strong> integration user (least privilege, API Only) → ECA (scope <em>api</em>, Enable Client Credentials Flow) → Policies (enable + Run As) → key + secret → wait for propagation.</li>
-    <li><strong>Outbound:</strong> External Auth Identity Provider (token endpoint + <code>audience</code> body param) → External Credential (Client Credentials with Client Secret) + Principal (ID/Secret, encrypted) → permission set principal access → Named Credential (base URL, Generate Authorization Header) → <code>callout:Name/path</code> in Apex.</li>
+    <li><strong>Outbound:</strong> External Auth Identity Provider (token endpoint + <code>audience</code> body param) → External Credential (client-credentials flow, referencing that identity provider) + Principal (ID/Secret, encrypted) → permission set principal access → Named Credential (base URL, Generate Authorization Header) → <code>callout:Name/path</code> in Apex.</li>
     <li><strong>Automation:</strong> trigger decides <em>when</em> → Queueable (<code>Database.AllowsCallouts</code>) does the callout → writes status back. Never callout directly from a trigger.</li>
   </ul>
 
@@ -2981,7 +2981,7 @@ Save this to the Account?</code></pre></li>
       <tr><td>A value comes back empty at runtime that the sample clearly had</td><td><strong>Dynamic keys:</strong> the runtime response's keys don't match the sampled ones — e.g. Amadeus's <code>include=AIRPORTS</code> returns airports keyed <em>by their codes</em> (<code>"CDG": {…}</code>), so a Paris sample can't parse a Madrid response. Restructure the call to avoid dynamic keys, or hand the parsing to Invocable Apex.</td></tr>
       <tr><td>Auth-style error calling a <em>public</em> API</td><td>Uncheck <strong>Generate Authorization Header</strong> on the no-auth Named Credential — there's no token to generate, so don't ask for one.</td></tr>
       <tr><td>401/403 calling Auth0 from the flow</td><td>Module 2's table applies unchanged: principal credentials, scopes on the M2M app, the <code>audience</code> body parameter with its trailing slash. The flow changed; the OAuth didn't.</td></tr>
-      <tr><td><code>invalid_client</code> from Amadeus's token endpoint</td><td>Re-copy the API Key/Secret onto the principal — and check the External Credential's <em>pass client credentials in request body</em> option is on: Amadeus expects the credentials as form-body parameters, exactly as your working Postman request sent them.</td></tr>
+      <tr><td><code>invalid_client</code> from Amadeus's token endpoint</td><td>Re-copy the API Key/Secret onto the principal — and if your release exposes a <em>send client credentials in the request body</em>-style option, make sure it's on: Amadeus expects the credentials as form-body parameters, exactly as your working Postman request sent them.</td></tr>
       <tr><td>Works in Debug, fails for real users</td><td>Real users need the permission set granting principal access too — Debug ran as <em>you</em>.</td></tr>
     </tbody>
   </table>
