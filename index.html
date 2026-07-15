@@ -109,6 +109,13 @@
   .g-p2 .group-items a.active::before { background:var(--blue); border-color:var(--blue); box-shadow:0 0 0 3px rgba(11,107,203,.16); }
   .g-p3 .group-items a.active::before { background:var(--amber); border-color:var(--amber); box-shadow:0 0 0 3px rgba(180,89,11,.16); }
   .g-p4 .group-items a.active::before { background:var(--purple); border-color:var(--purple); box-shadow:0 0 0 3px rgba(109,40,217,.16); }
+  .group-items a.locked {
+    opacity:.55; pointer-events:none; cursor:default; color:var(--muted);
+  }
+  .group-items a.locked::before { border-style:dashed; background:transparent; }
+  .wcard.locked { opacity:.72; }
+  .wcard.locked:hover { box-shadow:var(--shadow-sm); transform:none; }
+  .wcard.locked .locked-label { font-weight:700; font-size:13px; color:var(--muted); }
 
   /* ============ CRUMB BAR ============ */
   .crumbbar {
@@ -408,9 +415,9 @@
   <div class="cards">
     <div class="wcard p0"><h3>Module 1 · Foundation</h3><p>The big picture, every technical term decoded, the three OAuth flows compared, and the External Client App explained setting by setting.</p><a href="#p0-big-picture">Start here →</a></div>
     <div class="wcard p1"><h3>Module 2 · Client Credentials</h3><p>The machine-to-machine flow — plus a real mini-project: full create/read/update/delete from Apex against Auth0.</p><a href="#p1-intro">Open Module 2 →</a></div>
-    <div class="wcard p2"><h3>Module 3 · Web Server + PKCE</h3><p>The "acts as a person" flow: browser logins, PKCE, refresh tokens — plus the mini-project: a Document Filer pushing real files from Apex into Dropbox.</p><a href="#p2-intro">Open Module 3 →</a></div>
-    <div class="wcard p3"><h3>Module 4 · JWT Bearer</h3><p>Certificates instead of secrets: signed claims, pre-authorization, the Salesforce CLI — plus the mini-project: a Kickoff Scheduler doing full CRUD on Google Calendar events from Apex.</p><a href="#p3-intro">Open Module 4 →</a></div>
-    <div class="wcard p4"><h3>Module 5 · Flow Integrations</h3><p>APIs with clicks, not code: the HTTP Callout builder, your flows as instant REST endpoints, platform events — plus a live currency checker and the zero-code rebuild of Module 2's provisioner.</p><a href="#p4-intro">Open Module 5 →</a></div>
+    <div class="wcard p2 locked"><h3>Module 3 · Web Server + PKCE</h3><p>The "acts as a person" flow: browser logins, PKCE, refresh tokens — plus the mini-project: a Document Filer pushing real files from Apex into Dropbox.</p><span class="locked-label">Coming soon</span></div>
+    <div class="wcard p3 locked"><h3>Module 4 · JWT Bearer</h3><p>Certificates instead of secrets: signed claims, pre-authorization, the Salesforce CLI — plus the mini-project: a Kickoff Scheduler doing full CRUD on Google Calendar events from Apex.</p><span class="locked-label">Coming soon</span></div>
+    <div class="wcard p4 locked"><h3>Module 5 · Flow Integrations</h3><p>APIs with clicks, not code: the HTTP Callout builder, your flows as instant REST endpoints, platform events — plus a live currency checker and the zero-code rebuild of Module 2's provisioner.</p><span class="locked-label">Coming soon</span></div>
   </div>
 
   <h2>How to use this site</h2>
@@ -1524,7 +1531,7 @@ System.debug('Deleted. Try getUser again → expect our Auth0Exception with a 40
   </ul>
   <p style="font-size:13px;color:var(--muted)">Facts verified July 2026. UI labels drift between releases — match fields by role; the linked doc wins. Auth0's free-plan M2M token quota (~1,000/month per community sources) is ample for training.</p>
 
-  <div class="pager"><a href="#p1-troubleshoot"><span class="dir">← Previous</span><span class="name">Troubleshooting</span></a><a class="next" href="#p2-intro"><span class="dir">Next →</span><span class="name">Module 3: The Web Server Flow</span></a></div>
+  <div class="pager"><a href="#p1-troubleshoot"><span class="dir">← Previous</span><span class="name">Troubleshooting</span></a><a class="next" href="#home"><span class="dir">Finish →</span><span class="name">Modules 1–2 complete — more coming soon</span></a></div>
 </section>
 
 <!-- ================================================== P2-1 INTRO -->
@@ -3048,8 +3055,21 @@ Save this to the Account?</code></pre></li>
   /* ---------- Router ---------- */
   var sections = Array.prototype.slice.call(document.querySelectorAll('section.topic'));
   var ids = sections.map(function (s) { return s.id; });
+  /* Modules 3–5 locked: sidebar titles stay visible; content is not openable */
+  function isLocked(id) { return /^p[2-4]-/.test(id || ''); }
+  document.querySelectorAll('nav.sidebar a[href^="#p2-"], nav.sidebar a[href^="#p3-"], nav.sidebar a[href^="#p4-"]').forEach(function (a) {
+    a.classList.add('locked');
+    a.removeAttribute('href');
+    a.setAttribute('aria-disabled', 'true');
+    a.title = 'Coming soon';
+  });
   function show(id) {
-    if (ids.indexOf(id) === -1) id = 'home';
+    if (ids.indexOf(id) === -1 || isLocked(id)) {
+      id = 'home';
+      if (location.hash && location.hash !== '#home') {
+        try { history.replaceState(null, '', '#home'); } catch (e) { location.hash = 'home'; }
+      }
+    }
     sections.forEach(function (s) { s.classList.toggle('active', s.id === id); });
     document.querySelectorAll('nav.sidebar a[href^="#"]').forEach(function (a) {
       a.classList.toggle('active', a.getAttribute('href') === '#' + id);
