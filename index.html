@@ -7,6 +7,12 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <title>Salesforce Integration Academy — OAuth Flows Curriculum</title>
+<script>
+  /* Theme: saved choice wins, otherwise follow the OS setting. Runs before paint to avoid a flash. */
+  (function(){var t;try{t=localStorage.getItem('sfa_theme');}catch(e){}
+  if(t!=='light'&&t!=='dark')t=window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';
+  document.documentElement.setAttribute('data-theme',t);})();
+</script>
 <style>
 
   /* ============ TOKENS ============ */
@@ -26,6 +32,7 @@
     --red:#c22a3a;    --light-red:#fdecec;
     --purple:#6d28d9; --light-purple:#f1eafe;
     --code-bg:#0e1a30; --ink-navy:#1b2b4d;
+    --analogy-bg:#fdf9ec; --analogy-border:#ecdca6; --analogy-ink:#8a6d00; --quiz-bg:#faf7ff;
 
     --sidebar-w:300px; --topbar-h:60px; --crumb-h:52px;
     --shadow-sm:0 1px 2px rgba(16,24,40,.05),0 1px 3px rgba(16,24,40,.05);
@@ -215,8 +222,8 @@
   .callout.caution { background:var(--light-amber); border-color:#f0d4a8; } .callout.caution::before { background:#d98324; } .callout.caution .t { color:var(--amber); }
   .callout.security{ background:var(--light-red); border-color:#f4c4c4; } .callout.security::before { background:var(--red); } .callout.security .t { color:var(--red); }
   .callout code { background:rgba(255,255,255,.6); }
-  .analogy { position:relative; background:#fdf9ec; border:1px solid #ecdca6; border-radius:12px; padding:16px 20px; margin:18px 0; }
-  .analogy .t { font-weight:700; color:#8a6d00; display:block; margin-bottom:6px; }
+  .analogy { position:relative; background:var(--analogy-bg); border:1px solid var(--analogy-border); border-radius:12px; padding:16px 20px; margin:18px 0; }
+  .analogy .t { font-weight:700; color:var(--analogy-ink); display:block; margin-bottom:6px; }
 
   /* ============ STEP CARDS ============ */
   .step { border:1px solid var(--border); border-radius:12px; margin:0 0 16px; overflow:hidden; box-shadow:var(--shadow-sm); background:var(--surface); }
@@ -259,7 +266,7 @@
   .tabpane { display:none; } .tabpane.on { display:block; }
 
   /* ============ QUIZ ============ */
-  details.quiz { border:1px solid #e2d6fb; background:#faf7ff; border-radius:12px; padding:14px 18px; margin:14px 0; }
+  details.quiz { border:1px solid #e2d6fb; background:var(--quiz-bg); border-radius:12px; padding:14px 18px; margin:14px 0; }
   details.quiz summary { cursor:pointer; font-weight:600; color:var(--purple); font-size:13px; list-style:none; display:flex; align-items:center; gap:9px; }
   details.quiz summary::-webkit-details-marker { display:none; }
   details.quiz summary::before { content:"?"; width:20px; height:20px; border-radius:50%; background:var(--purple); color:#fff; font-size:12px; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; font-weight:700; }
@@ -294,6 +301,101 @@
   .legend { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:10px; margin:16px 0; }
   .legend .li { border-radius:10px; padding:10px 13px; font-size:12.5px; border:1px solid; line-height:1.5; }
 
+  /* ============ THEME TOGGLE ============ */
+  .topbar button.theme-toggle {
+    margin-left:auto; background:var(--surface-2); border:1px solid var(--border-strong); color:var(--ink);
+    border-radius:10px; height:38px; padding:0 13px; font-size:12.5px; font-weight:600; font-family:var(--font-ui);
+    cursor:pointer; display:flex; align-items:center; gap:7px; transition:.15s; flex-shrink:0;
+  }
+  .topbar button.theme-toggle .ico { font-size:15px; line-height:1; }
+  .topbar button.theme-toggle:hover { border-color:#c3cbd6; }
+  .topbar button:focus-visible, .crumb-btn:focus-visible { outline:2px solid var(--brand); outline-offset:2px; }
+
+  /* ============ DARK THEME ============
+     Tuned for long reading: deep blue-grey page (not pure black, which causes halation),
+     off-white body text (~12.6:1), accents lightened so every text colour clears WCAG AA
+     on its own tinted background. Screen-only, so printing always uses the light theme. */
+  @media screen {
+  :root[data-theme="dark"] {
+    color-scheme:dark;
+    --ink:#eef2f8; --text:#cfd8e4; --muted:#a3b0c2; --faint:#8794a8;
+    --border:#263245; --border-strong:#344358;
+    --page-bg:#10161f; --sidebar-bg:#131a25; --surface:#172030; --surface-2:#1c2636;
+
+    --navy:#a9bdf0;   --light-blue:#14273d;
+    --blue:#6cb2f7;   --brand:#6cb2f7;
+    --green:#5ccf98;  --light-green:#12291f;
+    --amber:#f2ab5c;  --light-amber:#2e2212;
+    --red:#ff8a95;    --light-red:#33181c;
+    --purple:#bba3fa; --light-purple:#231c3d;
+    --code-bg:#0b111c; --ink-navy:#2a3f68;
+    --analogy-bg:#2a2410; --analogy-border:#5a4a1c; --analogy-ink:#e8c766; --quiz-bg:#1d1830;
+
+    --shadow-sm:0 1px 2px rgba(0,0,0,.35),0 1px 3px rgba(0,0,0,.25);
+    --shadow-md:0 8px 26px rgba(0,0,0,.45);
+  }
+  [data-theme="dark"] ::selection { background:rgba(108,178,247,.32); }
+  [data-theme="dark"] nav.sidebar::-webkit-scrollbar-thumb,[data-theme="dark"] .toc::-webkit-scrollbar-thumb { background:#334156; background-clip:content-box; }
+
+  /* chrome: translucent bars, hovers, nav markers */
+  [data-theme="dark"] .topbar { background:rgba(16,22,31,.84); }
+  [data-theme="dark"] .crumbbar { background:rgba(16,22,31,.88); }
+  [data-theme="dark"] .topbar button.burger:hover,
+  [data-theme="dark"] .topbar button.theme-toggle:hover,
+  [data-theme="dark"] .crumb-btn:hover { background:#243044; border-color:#475670; }
+  [data-theme="dark"] a.home-link:hover,
+  [data-theme="dark"] .nav-group > .group-head:hover,
+  [data-theme="dark"] .group-items a:hover { background:#1c2636; }
+  [data-theme="dark"] .group-items a::before { border-color:#4a5870; }
+  [data-theme="dark"] .group-items a.visited::before { background:#6b7a90; border-color:#6b7a90; }
+  [data-theme="dark"] .group-items a.active { background:#1f2a3c; border-color:#2e3b50; }
+  [data-theme="dark"] .g-p0 .group-items a.active::before { box-shadow:0 0 0 3px rgba(169,189,240,.22); }
+  [data-theme="dark"] .g-p1 .group-items a.active::before { box-shadow:0 0 0 3px rgba(92,207,152,.22); }
+  [data-theme="dark"] .g-p2 .group-items a.active::before { box-shadow:0 0 0 3px rgba(108,178,247,.22); }
+  [data-theme="dark"] .g-p3 .group-items a.active::before { box-shadow:0 0 0 3px rgba(242,171,92,.22); }
+  [data-theme="dark"] .g-p4 .group-items a.active::before { box-shadow:0 0 0 3px rgba(187,163,250,.22); }
+
+  /* text & code */
+  [data-theme="dark"] code { color:#ff9fbd; background:#1f2939; border-color:#2e3b50; }
+  [data-theme="dark"] pre { border-color:#223049; }
+  [data-theme="dark"] pre code { background:none; border:0; color:inherit; }
+  [data-theme="dark"] pre .cm { color:#8fa3c0; }
+  [data-theme="dark"] tbody tr:hover td { background:#1a2333; }
+
+  /* tinted boxes: borders a step brighter than their fill */
+  [data-theme="dark"] .phase-tag.p0, [data-theme="dark"] .tagp.universal { background:#1c2843; }
+  [data-theme="dark"] .callout.concept, [data-theme="dark"] .tabs button.on.t-web { border-color:#24476b; }
+  [data-theme="dark"] .callout.action, [data-theme="dark"] .tabs button.on.t-cc { border-color:#1f4a36; }
+  [data-theme="dark"] .callout.caution, [data-theme="dark"] .tabs button.on.t-jwt { border-color:#584020; }
+  [data-theme="dark"] .callout.security { border-color:#5c2a31; }
+  [data-theme="dark"] .callout code { background:rgba(0,0,0,.28); }
+  [data-theme="dark"] .step .head { color:#8fe0b8; border-bottom-color:#1f4a36; }
+  [data-theme="dark"] .step.blue .head { color:#b7cdf6; border-bottom-color:#24476b; }
+  [data-theme="dark"] .step.amber .head { color:#f6c48c; border-bottom-color:#584020; }
+  [data-theme="dark"] .step.purple .head { color:#cfbefc; border-bottom-color:#3f3366; }
+  [data-theme="dark"] .pill.skip { background:#243044; }
+  [data-theme="dark"] details.quiz { border-color:#3f3366; }
+  [data-theme="dark"] details.quiz .ans { border-top-color:#3f3366; }
+  [data-theme="dark"] .wcard.p0 { border-color:#2c3a58; }
+  [data-theme="dark"] .wcard.p1 { border-color:#1f4a36; }
+  [data-theme="dark"] .wcard.p2 { border-color:#24476b; }
+  [data-theme="dark"] .wcard.p3 { border-color:#584020; }
+  [data-theme="dark"] .wcard.p4 { border-color:#3f3366; }
+
+  /* light accents now carry dark text so filled controls stay legible */
+  [data-theme="dark"] .chips button.on { color:#16112a; }
+  [data-theme="dark"] details.quiz summary::before { color:#16112a; }
+  [data-theme="dark"] input.jsearch { color:var(--ink); }
+  [data-theme="dark"] input.jsearch::placeholder { color:var(--faint); }
+  [data-theme="dark"] input.jsearch:focus { box-shadow:0 0 0 3px rgba(187,163,250,.22); }
+
+  /* diagrams were drawn for a light page: show them on a light "paper" panel so every label keeps its contrast */
+  [data-theme="dark"] .diagram {
+    background:#f3f6fa; border-color:#344358; color-scheme:light; color:#33404f;
+    --ink:#18212e; --text:#33404f; --muted:#647184; --faint:#8b96a6; /* Mermaid labels are HTML <p>/<span> that inherit page text colours */
+  }
+  }
+
   /* ============ RESPONSIVE ============ */
   @media (min-width:1241px) { main { padding-right:284px; } }
   @media (max-width:1240px) { .toc { display:none; } }
@@ -304,6 +406,7 @@
     .crumbbar { left:0; padding:0 18px; }
     .crumb-title { display:none; }
     .topbar .subtitle { display:none; }
+    .topbar button.theme-toggle .lbl { display:none; }
     h1 { font-size:25px; }
   }
   @media print {
@@ -323,6 +426,7 @@
     <div class="title">Salesforce Integration Academy</div>
     <div class="subtitle">OAuth flows, from zero to real projects — verified against official docs, July 2026</div>
   </div>
+  <button class="theme-toggle" id="themeToggle" type="button"></button>
 </div>
 
 <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
@@ -434,8 +538,8 @@
     <div class="li" style="background:var(--light-green);border-color:var(--green)"><strong style="color:var(--green)">✅ Do this</strong> — an action to take now</div>
     <div class="li" style="background:var(--light-amber);border-color:#fe9339"><strong style="color:var(--amber)">⚠️ Watch out</strong> — a common trap</div>
     <div class="li" style="background:var(--light-red);border-color:var(--red)"><strong style="color:var(--red)">🔒 Security</strong> — protect this or get burned</div>
-    <div class="li" style="background:#fffbea;border-color:#d4b106"><strong style="color:#8a6d00">🎭 Analogy</strong> — the idea in everyday language</div>
-    <div class="li" style="background:#fdfbff;border-color:var(--purple)"><strong style="color:var(--purple)">🧠 Check yourself</strong> — click to reveal the answer</div>
+    <div class="li" style="background:var(--analogy-bg);border-color:#d4b106"><strong style="color:var(--analogy-ink)">🎭 Analogy</strong> — the idea in everyday language</div>
+    <div class="li" style="background:var(--quiz-bg);border-color:var(--purple)"><strong style="color:var(--purple)">🧠 Check yourself</strong> — click to reveal the answer</div>
   </div>
 
   <h2>What you need before Module 2's labs</h2>
@@ -3223,6 +3327,30 @@ Save this to the Account?</code></pre></li>
   window.addEventListener('hashchange',function(){setTimeout(refresh,0);});
   window.addEventListener('scroll',function(){window.requestAnimationFrame(spy);},{passive:true});
   refresh();
+})();
+</script>
+<script>
+(function(){
+  var root=document.documentElement, btn=document.getElementById('themeToggle');
+  var mq=window.matchMedia&&matchMedia('(prefers-color-scheme: dark)');
+  function label(){
+    var dark=root.getAttribute('data-theme')==='dark';
+    btn.innerHTML='<span class="ico" aria-hidden="true">'+(dark?'\u2600\uFE0E':'\u263E')+'</span><span class="lbl">'+(dark?'Light':'Dark')+'</span>';
+    btn.setAttribute('aria-label','Switch to '+(dark?'light':'dark')+' theme');
+    btn.title='Switch to '+(dark?'light':'dark')+' theme';
+  }
+  btn.addEventListener('click',function(){
+    var t=root.getAttribute('data-theme')==='dark'?'light':'dark';
+    root.setAttribute('data-theme',t);
+    try{localStorage.setItem('sfa_theme',t);}catch(e){}
+    label();
+  });
+  /* follow OS changes until the reader picks a theme themselves */
+  if(mq&&mq.addEventListener) mq.addEventListener('change',function(e){
+    var saved; try{saved=localStorage.getItem('sfa_theme');}catch(err){}
+    if(saved!=='light'&&saved!=='dark'){root.setAttribute('data-theme',e.matches?'dark':'light'); label();}
+  });
+  label();
 })();
 </script>
 </body>
